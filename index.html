@@ -1023,7 +1023,6 @@ body.dark .qr-caption{color:#94a3b8}
     <div class="nav-item" onclick="goTo('qr',this)" id="nav-qr"><div class="nav-dot"></div>Генератор QR</div>
   </nav>
 <div class="sync-bar"><div class="sync-dot" id="sdot"></div><span id="stxt" style="color:#666">Подключение...</span></div>
-<button id="admin-reset-btn" class="btn d" style="display:none;margin:10px 14px 0 14px;width:calc(100% - 28px)" onclick="adminResetOperationalData()">Админ: Очистить данные</button>
 </div>
 
 <div class="main">
@@ -1090,6 +1089,7 @@ body.dark .qr-caption{color:#94a3b8}
     <button class="btn p" onclick="openInvModal('tmc','add')">+ Приход</button>
     <button class="btn" onclick="openInvModal('tmc','exp')">— Расход</button>
     <button class="btn g" onclick="exportInvXLSX('tmc')">↓ Excel</button>
+    <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('tmc')">Админ: Очистить</button>
   </div>
   <div class="tw"><table>
     <thead><tr><th style="width:56%">Наименование</th><th style="width:12%">Остаток</th><th style="width:12%">Статус</th><th style="width:10%">Пороги</th><th style="width:10%">История</th></tr></thead>
@@ -1111,6 +1111,7 @@ body.dark .qr-caption{color:#94a3b8}
     <button class="btn p" onclick="openInvModal('spec','add')">+ Приход</button>
     <button class="btn" onclick="openInvModal('spec','exp')">— Расход</button>
     <button class="btn g" onclick="exportInvXLSX('spec')">↓ Excel</button>
+    <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('spec')">Админ: Очистить</button>
   </div>
   <div class="tw"><table>
     <thead><tr><th style="width:56%">Наименование</th><th style="width:12%">Остаток</th><th style="width:12%">Статус</th><th style="width:10%">Пороги</th><th style="width:10%">История</th></tr></thead>
@@ -1154,6 +1155,7 @@ body.dark .qr-caption{color:#94a3b8}
       <div class="toolbar-group">
         <button class="btn g" onclick="exportSupXLSX()">↓ Excel</button>
         <span class="info-chip" id="sup-tag"></span>
+        <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('supply')">Админ: Очистить</button>
       </div>
     </div>
     <div class="tw"><table>
@@ -1177,6 +1179,7 @@ body.dark .qr-caption{color:#94a3b8}
     <select id="tsd-zf" onchange="renderTSD()"><option value="all">Все зоны</option></select>
     <button class="btn p" onclick="openTSDModal()">+ Добавить / обновить</button>
     <button class="btn g" onclick="exportTSDXLSX()">↓ Excel</button>
+    <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('tsd')">Админ: Очистить</button>
   </div>
   <div id="tsd-sn-sec" class="hidden">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:10px">Список S/N — результаты поиска</h3>
@@ -1228,6 +1231,7 @@ body.dark .qr-caption{color:#94a3b8}
       <div class="toolbar-group">
         <button class="btn g" onclick="exportLossXLSX('in')">↓ Excel</button>
         <span class="info-chip" id="lin-tag"></span>
+        <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('loss-in')">Админ: Очистить входящий</button>
       </div>
     </div>
     <div class="tw"><table>
@@ -1274,6 +1278,7 @@ body.dark .qr-caption{color:#94a3b8}
       <div class="toolbar-group">
         <button class="btn g" onclick="exportLossXLSX('out')">↓ Excel</button>
         <span class="info-chip" id="lout-tag"></span>
+        <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('loss-out')">Админ: Очистить исходящий</button>
       </div>
     </div>
     <div class="tw"><table>
@@ -1492,7 +1497,7 @@ body.dark .qr-caption{color:#94a3b8}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyB4geva3KXdXUktA00tK1dT_-bA82Z0uPs",
@@ -1596,33 +1601,107 @@ function makeEmptyInventory(items){
   });
   return data;
 }
+async function buildModuleBackupPayload(moduleKey){
+  if(moduleKey==='tmc'){
+    const snap=await getDoc(doc(db,'inventory','tmc'));
+    return {inventory:snap.data()||{}};
+  }
+  if(moduleKey==='spec'){
+    const snap=await getDoc(doc(db,'inventory','spec'));
+    return {inventory:snap.data()||{}};
+  }
+  if(moduleKey==='supply'){
+    const [curr,arch]=await Promise.all([
+      getDoc(doc(db,'supply','current')),
+      getDoc(doc(db,'supply','archive'))
+    ]);
+    return {current:curr.data()||{},archive:arch.data()||{}};
+  }
+  if(moduleKey==='tsd'){
+    const snap=await getDoc(doc(db,'tsd','zones'));
+    return {zones:snap.data()||{}};
+  }
+  if(moduleKey==='loss-in'){
+    const snap=await getDoc(doc(db,'loss','incoming'));
+    return {incoming:snap.data()||{}};
+  }
+  if(moduleKey==='loss-out'){
+    const snap=await getDoc(doc(db,'loss','outgoing'));
+    return {outgoing:snap.data()||{}};
+  }
+  return null;
+}
+async function backupModuleData(moduleKey,label){
+  const payload=await buildModuleBackupPayload(moduleKey);
+  if(payload===null)throw new Error('unknown-module');
+  const backupRef=collection(db,'admin_backups');
+  await addDoc(backupRef,{
+    moduleKey,
+    moduleLabel:label,
+    createdAt:new Date().toISOString(),
+    source:'admin-reset',
+    payload
+  });
+}
 async function adminResetOperationalData(){
-  const pwd=prompt('Введите пароль администратора для очистки данных:');
+  const pwd=prompt('Введите пароль администратора:');
   if(pwd===null)return;
   if(String(pwd).trim()!==ADMIN_RESET_PASSWORD){
     notify('Неверный пароль.', 'err');
     return;
   }
-  const phrase=prompt('Для подтверждения введите: ОЧИСТИТЬ ДАННЫЕ');
-  if(phrase!=='ОЧИСТИТЬ ДАННЫЕ'){
+  return true;
+}
+async function adminResetModule(moduleKey){
+  const authOk=await adminResetOperationalData();
+  if(!authOk)return;
+  const labels={
+    tmc:'ТМЦ',
+    spec:'Спецодежда',
+    supply:'Трекер заказов',
+    tsd:'ТСД / Оборудование',
+    'loss-in':'Потери — входящий',
+    'loss-out':'Потери — исходящий'
+  };
+  const label=labels[moduleKey]||moduleKey;
+  const expectedPhrase=`ОЧИСТИТЬ ${label.toUpperCase()}`;
+  const phrase=prompt(`Для подтверждения введите: ${expectedPhrase}`);
+  if(phrase!==expectedPhrase){
     notify('Подтверждение не пройдено.', 'info');
     return;
   }
-  if(!confirm('Очистить ТМЦ, спецодежду, поставки, ТСД и потери? График НЕ будет затронут.'))return;
-  const emptyTSD={};
-  TSD_ZONE_CANON.forEach(zone=>{emptyTSD[zone]={devices:[],sns:[]};});
-  await Promise.all([
-    setDoc(doc(db,'inventory','tmc'),makeEmptyInventory(TMC_ITEMS)),
-    setDoc(doc(db,'inventory','spec'),makeEmptyInventory(SPEC_ITEMS)),
-    setDoc(doc(db,'supply','current'),{items:[],updatedAt:new Date().toISOString()}),
-    setDoc(doc(db,'supply','archive'),{items:[]}),
-    setDoc(doc(db,'tsd','zones'),emptyTSD),
-    setDoc(doc(db,'loss','incoming'),{items:[]}),
-    setDoc(doc(db,'loss','outgoing'),{items:[]})
-  ]);
-  notify('Очистка выполнена: операционные модули сброшены, график сохранен.','ok');
+  if(!confirm(`Очистить данные модуля "${label}"?`))return;
+  try{
+    await backupModuleData(moduleKey,label);
+  }catch(e){
+    console.error(e);
+    notify('Очистка отменена: не удалось создать бэкап.', 'err');
+    return;
+  }
+  if(moduleKey==='tmc'){
+    await setDoc(doc(db,'inventory','tmc'),makeEmptyInventory(TMC_ITEMS));
+  }else if(moduleKey==='spec'){
+    await setDoc(doc(db,'inventory','spec'),makeEmptyInventory(SPEC_ITEMS));
+  }else if(moduleKey==='supply'){
+    await Promise.all([
+      setDoc(doc(db,'supply','current'),{items:[],updatedAt:new Date().toISOString()}),
+      setDoc(doc(db,'supply','archive'),{items:[]})
+    ]);
+  }else if(moduleKey==='tsd'){
+    const emptyTSD={};
+    TSD_ZONE_CANON.forEach(zone=>{emptyTSD[zone]={devices:[],sns:[]};});
+    await setDoc(doc(db,'tsd','zones'),emptyTSD);
+  }else if(moduleKey==='loss-in'){
+    await setDoc(doc(db,'loss','incoming'),{items:[]});
+  }else if(moduleKey==='loss-out'){
+    await setDoc(doc(db,'loss','outgoing'),{items:[]});
+  }else{
+    notify('Неизвестный модуль очистки.', 'err');
+    return;
+  }
+  notify(`Очистка выполнена: ${label}.`, 'ok');
 }
-window.adminResetOperationalData=adminResetOperationalData;
+window.adminResetModule=adminResetModule;
 function notify(msg,type='info'){
   const wrap=document.getElementById('toast-wrap');
   if(!wrap)return;
@@ -1653,16 +1732,16 @@ window.toggleTheme=()=>{
 };
 function setupAdminResetAccess(){
   const syncBar=document.querySelector('.sync-bar');
-  const btn=document.getElementById('admin-reset-btn');
-  if(!syncBar||!btn)return;
+  const buttons=[...document.querySelectorAll('.admin-reset-btn')];
+  if(!syncBar||!buttons.length)return;
   syncBar.addEventListener('click',()=>{
     adminUnlockClicks++;
     if(adminUnlockTimer)clearTimeout(adminUnlockTimer);
     adminUnlockTimer=setTimeout(()=>{adminUnlockClicks=0;},2500);
     if(adminUnlockClicks>=5){
-      btn.style.display='block';
+      buttons.forEach(btn=>{btn.style.display='';});
       adminUnlockClicks=0;
-      notify('Админ-кнопка разблокирована на эту сессию.', 'info');
+      notify('Админ-кнопки разблокированы на эту сессию.', 'info');
     }
   });
 }
