@@ -1391,7 +1391,7 @@ body.dark .qr-caption{color:#94a3b8}
       Новый S/N добавляется в выбранную зону и модель. Статус S/N автоматически влияет на "В работе / Брак / В ремонте".
     </div>
     <div class="mr"><label>Зона</label><select id="tm-zone"></select></div>
-    <div class="mr"><label>Модель</label><input type="text" id="tm-model" placeholder="RT40, Urovo U2..."></div>
+    <div class="mr"><label>Модель</label><select id="tm-model"></select></div>
     <div class="mr"><label><input type="checkbox" id="tm-apply-manual"> Применить ручную корректировку счетчиков (опционально)</label></div>
     <div class="mr"><label>Всего</label><input type="number" id="tm-total" min="0" value="0"></div>
     <div class="mr"><label>В работе</label><input type="number" id="tm-work" min="0" value="0"></div>
@@ -1654,6 +1654,7 @@ function initZoneSelects(){
   }
   if(tm){
     tm.innerHTML=ZONES.filter(z=>z!=='Аналитика').map(z=>`<option>${z}</option>`).join('');
+    syncTSDModelOptions();
   }
   if(ms){
     ms.innerHTML=ZONES.map(z=>`<option>${z}</option>`).join('');
@@ -2170,6 +2171,28 @@ function canonicalModelByZone(zone,model){
   return map[m]||String(model||'').trim()||'Без модели';
 }
 
+function getModelOptionsByZone(zone){
+  const z=normalizeZoneName(zone);
+  const opts=new Set();
+  const map=MODEL_CANON_BY_ZONE[z]||{};
+  Object.values(map).forEach(model=>opts.add(model));
+  const zoneData=tsdData?.[z]||{};
+  (zoneData.devices||[]).forEach(d=>{if(String(d.model||'').trim())opts.add(String(d.model).trim());});
+  (zoneData.sns||[]).forEach(s=>{if(String(s.model||'').trim())opts.add(String(s.model).trim());});
+  return [...opts].sort((a,b)=>a.localeCompare(b,'ru'));
+}
+
+function syncTSDModelOptions(){
+  const zoneEl=document.getElementById('tm-zone');
+  const modelEl=document.getElementById('tm-model');
+  if(!zoneEl||!modelEl)return;
+  const zone=normalizeZoneName(zoneEl.value||'');
+  const options=getModelOptionsByZone(zone);
+  modelEl.innerHTML=options.length
+    ? options.map(m=>`<option value="${m}">${m}</option>`).join('')
+    : '<option value="">Нет моделей для зоны</option>';
+}
+
 function mergeDevicesByModel(devices){
   const byModel={};
   (devices||[]).forEach(d=>{
@@ -2363,7 +2386,9 @@ window.setSNStatus=async(zone,sn,newStatus)=>{
 };
 
 window.openTSDModal=()=>{
-  document.getElementById('tm-model').value='';
+  syncTSDModelOptions();
+  const modelEl=document.getElementById('tm-model');
+  if(modelEl && modelEl.options.length)modelEl.selectedIndex=0;
   document.getElementById('tm-total').value='0';
   document.getElementById('tm-work').value='0';
   document.getElementById('tm-bad').value='0';
@@ -2376,7 +2401,7 @@ window.openTSDModal=()=>{
 
 window.submitTSD=async()=>{
   const zone=normalizeZoneName(document.getElementById('tm-zone').value);
-  const model=canonicalModelByZone(zone,document.getElementById('tm-model').value.trim());
+  const model=canonicalModelByZone(zone,document.getElementById('tm-model').value);
   if(!model){closeM('m-tsd');return;}
   const total=parseInt(document.getElementById('tm-total').value)||0;
   const work=parseInt(document.getElementById('tm-work').value)||0;
@@ -2406,6 +2431,8 @@ window.submitTSD=async()=>{
   closeM('m-tsd');
   notify('Данные оборудования сохранены.', 'ok');
 };
+
+document.getElementById('tm-zone').addEventListener('change',syncTSDModelOptions);
 
 window.exportTSDXLSX=()=>{
   const rows=[['Зона','Модель','Всего','В работе','Брак','В ремонте']];
