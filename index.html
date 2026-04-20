@@ -1576,6 +1576,11 @@ function normalizeSchedPeople(list){
   (list||[]).forEach(addPerson);
   return [...map.values()];
 }
+function swapScheduleZone(zone){
+  if(zone==='Входящий поток')return'Упаковка';
+  if(zone==='Упаковка')return'Входящий поток';
+  return zone;
+}
 
 // SYNC HELPERS
 function setSS(status,text){
@@ -2883,7 +2888,16 @@ async function initSched(){
     schedData={shifts:{},people:allPeople};
   }else{
     const raw=snap.data()||{};
-    schedData={shifts:raw.shifts||{},people:normalizeSchedPeople(raw.people||[])};
+    let people=normalizeSchedPeople(raw.people||[]);
+    // One-time migration: incoming/packing lists were historically swapped in schedule data.
+    if(!raw.zoneSwapInPackV1){
+      people=people.map(p=>({...p,zone:swapScheduleZone(p.zone)}));
+      const migrated={...raw,shifts:raw.shifts||{},people,zoneSwapInPackV1:true};
+      await setDoc(ref,migrated);
+      schedData={shifts:migrated.shifts,people:migrated.people};
+    }else{
+      schedData={shifts:raw.shifts||{},people};
+    }
   }
   onSnapshot(ref,s=>{
     const raw=s.data()||{};
