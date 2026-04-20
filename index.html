@@ -1023,6 +1023,7 @@ body.dark .qr-caption{color:#94a3b8}
     <div class="nav-item" onclick="goTo('qr',this)" id="nav-qr"><div class="nav-dot"></div>Генератор QR</div>
   </nav>
 <div class="sync-bar"><div class="sync-dot" id="sdot"></div><span id="stxt" style="color:#666">Подключение...</span></div>
+<button id="admin-reset-btn" class="btn d" style="display:none;margin:10px 14px 0 14px;width:calc(100% - 28px)" onclick="adminResetOperationalData()">Админ: Очистить данные</button>
 </div>
 
 <div class="main">
@@ -1557,7 +1558,9 @@ const TSD_ZONE_ALIASES={
 
 const INV_DEFAULTS={tmc:{amber:50,red:10},spec:{amber:20,red:5}};
 const SCHED_BASE_PEOPLE=[...PEOPLE,...ANALYSTS];
-const RELEASE_CLEAN_KEY='atakent_release_clean_v1';
+const ADMIN_RESET_PASSWORD='218987';
+let adminUnlockClicks=0;
+let adminUnlockTimer=null;
 
 function normalizeSchedPeople(list){
   const map=new Map();
@@ -1588,8 +1591,19 @@ function makeEmptyInventory(items){
   });
   return data;
 }
-async function runReleaseCleanOnce(){
-  if(localStorage.getItem(RELEASE_CLEAN_KEY)==='1')return;
+async function adminResetOperationalData(){
+  const pwd=prompt('Введите пароль администратора для очистки данных:');
+  if(pwd===null)return;
+  if(String(pwd).trim()!==ADMIN_RESET_PASSWORD){
+    notify('Неверный пароль.', 'err');
+    return;
+  }
+  const phrase=prompt('Для подтверждения введите: ОЧИСТИТЬ ДАННЫЕ');
+  if(phrase!=='ОЧИСТИТЬ ДАННЫЕ'){
+    notify('Подтверждение не пройдено.', 'info');
+    return;
+  }
+  if(!confirm('Очистить ТМЦ, спецодежду, поставки, ТСД и потери? График НЕ будет затронут.'))return;
   const emptyTSD={};
   TSD_ZONE_CANON.forEach(zone=>{emptyTSD[zone]={devices:[],sns:[]};});
   await Promise.all([
@@ -1601,9 +1615,9 @@ async function runReleaseCleanOnce(){
     setDoc(doc(db,'loss','incoming'),{items:[]}),
     setDoc(doc(db,'loss','outgoing'),{items:[]})
   ]);
-  localStorage.setItem(RELEASE_CLEAN_KEY,'1');
-  notify('Релизный сброс выполнен: данные очищены (кроме графика).','ok');
+  notify('Очистка выполнена: операционные модули сброшены, график сохранен.','ok');
 }
+window.adminResetOperationalData=adminResetOperationalData;
 function notify(msg,type='info'){
   const wrap=document.getElementById('toast-wrap');
   if(!wrap)return;
@@ -1632,6 +1646,21 @@ window.toggleTheme=()=>{
   const btn=document.getElementById('theme-toggle');
   if(btn)btn.setAttribute('aria-pressed',dark?'true':'false');
 };
+function setupAdminResetAccess(){
+  const syncBar=document.querySelector('.sync-bar');
+  const btn=document.getElementById('admin-reset-btn');
+  if(!syncBar||!btn)return;
+  syncBar.addEventListener('click',()=>{
+    adminUnlockClicks++;
+    if(adminUnlockTimer)clearTimeout(adminUnlockTimer);
+    adminUnlockTimer=setTimeout(()=>{adminUnlockClicks=0;},2500);
+    if(adminUnlockClicks>=5){
+      btn.style.display='block';
+      adminUnlockClicks=0;
+      notify('Админ-кнопка разблокирована на эту сессию.', 'info');
+    }
+  });
+}
 
 async function saveDoc(ref,data){
   try{
@@ -3022,7 +3051,7 @@ setSS('saving','Подключение...');
 try{
   initTheme();
   initZoneSelects();
-  await runReleaseCleanOnce();
+  setupAdminResetAccess();
   await Promise.all([initInv('tmc'),initInv('spec'),initTSD(),initLoss(),initSched(),initSupply()]);
   setSS('on','Синхронизировано');
   document.getElementById('lupd').textContent='Обновлено: '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
