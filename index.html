@@ -1952,12 +1952,31 @@ function loadSupFile(file){
   const reader=new FileReader();
   reader.onload=async(ev)=>{
     const wb=XLSX.read(ev.target.result,{type:'array'});
-    const parsed=supFmtV==='budget'?parseSupBudget(wb):parseSupNeed(wb);
+    const parsedBudget=parseSupBudget(wb);
+    const parsedNeed=parseSupNeed(wb);
+    let parsed=supFmtV==='budget'?parsedBudget:parsedNeed;
+    let detectedFmt=supFmtV;
+    // Auto-fallback protects imports when operator can't explicitly switch format in current view.
+    if(!parsed.length){
+      if(parsedBudget.length||parsedNeed.length){
+        if(parsedNeed.length>parsedBudget.length){
+          parsed=parsedNeed;
+          detectedFmt='need';
+        }else{
+          parsed=parsedBudget;
+          detectedFmt='budget';
+        }
+      }
+    }
+    if(parsed.length){
+      setSupFmt(detectedFmt);
+    }
     const mergedPreview=mergeSupply(supItems,parsed);
     const addedUnique=Math.max(0,mergedPreview.length-supItems.length);
     const okToImport=confirm(
       `Подтвердить импорт файла?\n`+
       `Файл: ${file.name||'без имени'}\n`+
+      `Формат: ${detectedFmt==='need'?'Потребность':'Бюджет'}\n`+
       `Найдено позиций: ${parsed.length}\n`+
       `Новых позиций: ${addedUnique}\n`+
       `Всего после импорта: ${mergedPreview.length}`
