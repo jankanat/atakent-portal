@@ -1090,6 +1090,7 @@ body.dark .qr-caption{color:#94a3b8}
     <button class="btn" onclick="openInvModal('tmc','exp')">— Расход</button>
     <button class="btn g" onclick="exportInvXLSX('tmc')">↓ Excel</button>
     <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('tmc')">Админ: Очистить</button>
+    <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('tmc')">Админ: Восстановить</button>
   </div>
   <div class="tw"><table>
     <thead><tr><th style="width:56%">Наименование</th><th style="width:12%">Остаток</th><th style="width:12%">Статус</th><th style="width:10%">Пороги</th><th style="width:10%">История</th></tr></thead>
@@ -1112,6 +1113,7 @@ body.dark .qr-caption{color:#94a3b8}
     <button class="btn" onclick="openInvModal('spec','exp')">— Расход</button>
     <button class="btn g" onclick="exportInvXLSX('spec')">↓ Excel</button>
     <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('spec')">Админ: Очистить</button>
+    <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('spec')">Админ: Восстановить</button>
   </div>
   <div class="tw"><table>
     <thead><tr><th style="width:56%">Наименование</th><th style="width:12%">Остаток</th><th style="width:12%">Статус</th><th style="width:10%">Пороги</th><th style="width:10%">История</th></tr></thead>
@@ -1156,6 +1158,7 @@ body.dark .qr-caption{color:#94a3b8}
         <button class="btn g" onclick="exportSupXLSX()">↓ Excel</button>
         <span class="info-chip" id="sup-tag"></span>
         <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('supply')">Админ: Очистить</button>
+        <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('supply')">Админ: Восстановить</button>
       </div>
     </div>
     <div class="tw"><table>
@@ -1180,6 +1183,7 @@ body.dark .qr-caption{color:#94a3b8}
     <button class="btn p" onclick="openTSDModal()">+ Добавить / обновить</button>
     <button class="btn g" onclick="exportTSDXLSX()">↓ Excel</button>
     <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('tsd')">Админ: Очистить</button>
+    <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('tsd')">Админ: Восстановить</button>
   </div>
   <div id="tsd-sn-sec" class="hidden">
     <h3 style="font-size:14px;font-weight:600;margin-bottom:10px">Список S/N — результаты поиска</h3>
@@ -1232,6 +1236,7 @@ body.dark .qr-caption{color:#94a3b8}
         <button class="btn g" onclick="exportLossXLSX('in')">↓ Excel</button>
         <span class="info-chip" id="lin-tag"></span>
         <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('loss-in')">Админ: Очистить входящий</button>
+        <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('loss-in')">Админ: Восстановить входящий</button>
       </div>
     </div>
     <div class="tw"><table>
@@ -1279,6 +1284,7 @@ body.dark .qr-caption{color:#94a3b8}
         <button class="btn g" onclick="exportLossXLSX('out')">↓ Excel</button>
         <span class="info-chip" id="lout-tag"></span>
         <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('loss-out')">Админ: Очистить исходящий</button>
+        <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('loss-out')">Админ: Восстановить исходящий</button>
       </div>
     </div>
     <div class="tw"><table>
@@ -1497,7 +1503,7 @@ body.dark .qr-caption{color:#94a3b8}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/12.0.0/firebase-firestore.js";
 
 const app = initializeApp({
   apiKey:"AIzaSyB4geva3KXdXUktA00tK1dT_-bA82Z0uPs",
@@ -1631,7 +1637,7 @@ async function buildModuleBackupPayload(moduleKey){
   }
   return null;
 }
-async function backupModuleData(moduleKey,label){
+async function backupModuleData(moduleKey,label,source='admin-reset'){
   const payload=await buildModuleBackupPayload(moduleKey);
   if(payload===null)throw new Error('unknown-module');
   const backupRef=collection(db,'admin_backups');
@@ -1639,9 +1645,41 @@ async function backupModuleData(moduleKey,label){
     moduleKey,
     moduleLabel:label,
     createdAt:new Date().toISOString(),
-    source:'admin-reset',
+    source,
     payload
   });
+}
+async function getLatestModuleBackup(moduleKey){
+  const snap=await getDocs(collection(db,'admin_backups'));
+  let latest=null;
+  snap.forEach(d=>{
+    const item=d.data()||{};
+    if(item.moduleKey!==moduleKey)return;
+    if(item.source!=='admin-reset')return;
+    const createdAt=String(item.createdAt||'');
+    if(!latest||createdAt>String(latest.createdAt||''))latest=item;
+  });
+  return latest;
+}
+async function restoreModulePayload(moduleKey,payload){
+  if(moduleKey==='tmc'){
+    await setDoc(doc(db,'inventory','tmc'),payload?.inventory||{});
+  }else if(moduleKey==='spec'){
+    await setDoc(doc(db,'inventory','spec'),payload?.inventory||{});
+  }else if(moduleKey==='supply'){
+    await Promise.all([
+      setDoc(doc(db,'supply','current'),payload?.current||{items:[],updatedAt:new Date().toISOString()}),
+      setDoc(doc(db,'supply','archive'),payload?.archive||{items:[]})
+    ]);
+  }else if(moduleKey==='tsd'){
+    await setDoc(doc(db,'tsd','zones'),payload?.zones||{});
+  }else if(moduleKey==='loss-in'){
+    await setDoc(doc(db,'loss','incoming'),payload?.incoming||{items:[]});
+  }else if(moduleKey==='loss-out'){
+    await setDoc(doc(db,'loss','outgoing'),payload?.outgoing||{items:[]});
+  }else{
+    throw new Error('unknown-module');
+  }
 }
 async function adminResetOperationalData(){
   const pwd=prompt('Введите пароль администратора:');
@@ -1702,6 +1740,41 @@ async function adminResetModule(moduleKey){
   notify(`Очистка выполнена: ${label}.`, 'ok');
 }
 window.adminResetModule=adminResetModule;
+async function adminRestoreModule(moduleKey){
+  const authOk=await adminResetOperationalData();
+  if(!authOk)return;
+  const labels={
+    tmc:'ТМЦ',
+    spec:'Спецодежда',
+    supply:'Трекер заказов',
+    tsd:'ТСД / Оборудование',
+    'loss-in':'Потери — входящий',
+    'loss-out':'Потери — исходящий'
+  };
+  const label=labels[moduleKey]||moduleKey;
+  const expectedPhrase=`ВОССТАНОВИТЬ ${label.toUpperCase()}`;
+  const phrase=prompt(`Для подтверждения введите: ${expectedPhrase}`);
+  if(phrase!==expectedPhrase){
+    notify('Подтверждение не пройдено.', 'info');
+    return;
+  }
+  if(!confirm(`Восстановить модуль "${label}" из последнего бэкапа?`))return;
+  const backup=await getLatestModuleBackup(moduleKey);
+  if(!backup||!backup.payload){
+    notify('Бэкап не найден для этого модуля.', 'err');
+    return;
+  }
+  try{
+    await backupModuleData(moduleKey,`${label} (до восстановления)`,'admin-restore-pre');
+    await restoreModulePayload(moduleKey,backup.payload);
+  }catch(e){
+    console.error(e);
+    notify('Ошибка восстановления из бэкапа.', 'err');
+    return;
+  }
+  notify(`Восстановление выполнено: ${label}.`, 'ok');
+}
+window.adminRestoreModule=adminRestoreModule;
 function notify(msg,type='info'){
   const wrap=document.getElementById('toast-wrap');
   if(!wrap)return;
