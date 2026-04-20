@@ -1890,20 +1890,52 @@ function parseSupBudget(wb){
 }
 
 function parseSupNeed(wb){
-  const s=wb.SheetNames[0];
-  const rows=XLSX.utils.sheet_to_json(wb.Sheets[s],{header:1,defval:''});
-  if(rows.length<2)return[];
-  const headers=rows[0],units=rows[1];
-  let atRow=null;
-  for(let i=2;i<rows.length;i++){if(String(rows[i][0]).toLowerCase().indexOf('атакент')!==-1){atRow=rows[i];break;}}
-  if(!atRow)return[];
-  const res=[];
-  for(let c=1;c<headers.length;c++){
-    const name=String(headers[c]).trim();if(!name)continue;
-    const qty=parseFloat(atRow[c])||0;if(qty===0)continue;
-    res.push({name,unit:String(units[c]).trim()||'шт',qty,arrived:0,status:'waiting',note:''});
+  const toNum=v=>{
+    const raw=String(v??'').replace(/\s+/g,'').replace(',','.');
+    const n=parseFloat(raw);
+    return Number.isFinite(n)?n:0;
+  };
+  const parseNeedSheet=(sheetName)=>{
+    const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:''});
+    if(rows.length<3)return[];
+    const headers=rows[0]||[];
+    const units=rows[1]||[];
+    let targetRow=null;
+    for(let i=2;i<rows.length;i++){
+      if(String(rows[i][0]||'').toLowerCase().includes('атакент')){targetRow=rows[i];break;}
+    }
+    // Fallback: choose row with the largest positive numeric sum (robust for files without "Атакент" label)
+    if(!targetRow){
+      let bestSum=0;
+      for(let i=2;i<rows.length;i++){
+        const r=rows[i]||[];
+        const hasLabel=String(r[0]||'').trim().length>0;
+        if(!hasLabel)continue;
+        let sum=0;
+        for(let c=1;c<headers.length;c++){
+          const q=toNum(r[c]);
+          if(q>0)sum+=q;
+        }
+        if(sum>bestSum){bestSum=sum;targetRow=r;}
+      }
+    }
+    if(!targetRow)return[];
+    const res=[];
+    for(let c=1;c<headers.length;c++){
+      const name=String(headers[c]||'').trim();
+      if(!name)continue;
+      const qty=toNum(targetRow[c]);
+      if(qty<=0)continue;
+      res.push({name,unit:String(units[c]||'').trim()||'шт',qty,arrived:0,status:'waiting',note:''});
+    }
+    return res;
+  };
+  // Try all sheets: return the first successful parse with non-empty positions.
+  for(const s of wb.SheetNames){
+    const parsed=parseNeedSheet(s);
+    if(parsed.length)return parsed;
   }
-  return res;
+  return [];
 }
 
 function mergeSupply(existing,newItems){
