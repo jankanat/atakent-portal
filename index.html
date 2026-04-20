@@ -1225,7 +1225,6 @@ body.dark .qr-caption{color:#94a3b8}
       </div>
       <span class="toolbar-sep"></span>
       <div class="toolbar-group">
-        <button class="btn d" onclick="clearLoss('in')">Очистить</button>
         <button class="btn g" onclick="exportLossXLSX('in')">↓ Excel</button>
         <span class="info-chip" id="lin-tag"></span>
       </div>
@@ -1272,7 +1271,6 @@ body.dark .qr-caption{color:#94a3b8}
       </div>
       <span class="toolbar-sep"></span>
       <div class="toolbar-group">
-        <button class="btn d" onclick="clearLoss('out')">Очистить</button>
         <button class="btn g" onclick="exportLossXLSX('out')">↓ Excel</button>
         <span class="info-chip" id="lout-tag"></span>
       </div>
@@ -1559,6 +1557,7 @@ const TSD_ZONE_ALIASES={
 
 const INV_DEFAULTS={tmc:{amber:50,red:10},spec:{amber:20,red:5}};
 const SCHED_BASE_PEOPLE=[...PEOPLE,...ANALYSTS];
+const RELEASE_CLEAN_KEY='atakent_release_clean_v1';
 
 function normalizeSchedPeople(list){
   const map=new Map();
@@ -1581,6 +1580,29 @@ function setSS(status,text){
   d.className='sync-dot '+status;
   t.textContent=text;
   t.style.color=status==='on'?'#22863a':status==='err'?'#dc2626':'#f59e0b';
+}
+function makeEmptyInventory(items){
+  const data={};
+  items.forEach(name=>{
+    data[name]={invent:0,expense:0,arrival:0,log:[]};
+  });
+  return data;
+}
+async function runReleaseCleanOnce(){
+  if(localStorage.getItem(RELEASE_CLEAN_KEY)==='1')return;
+  const emptyTSD={};
+  TSD_ZONE_CANON.forEach(zone=>{emptyTSD[zone]={devices:[],sns:[]};});
+  await Promise.all([
+    setDoc(doc(db,'inventory','tmc'),makeEmptyInventory(TMC_ITEMS)),
+    setDoc(doc(db,'inventory','spec'),makeEmptyInventory(SPEC_ITEMS)),
+    setDoc(doc(db,'supply','current'),{items:[],updatedAt:new Date().toISOString()}),
+    setDoc(doc(db,'supply','archive'),{items:[]}),
+    setDoc(doc(db,'tsd','zones'),emptyTSD),
+    setDoc(doc(db,'loss','incoming'),{items:[]}),
+    setDoc(doc(db,'loss','outgoing'),{items:[]})
+  ]);
+  localStorage.setItem(RELEASE_CLEAN_KEY,'1');
+  notify('Релизный сброс выполнен: данные очищены (кроме графика).','ok');
 }
 function notify(msg,type='info'){
   const wrap=document.getElementById('toast-wrap');
@@ -2973,6 +2995,7 @@ setSS('saving','Подключение...');
 try{
   initTheme();
   initZoneSelects();
+  await runReleaseCleanOnce();
   await Promise.all([initInv('tmc'),initInv('spec'),initTSD(),initLoss(),initSched(),initSupply()]);
   setSS('on','Синхронизировано');
   document.getElementById('lupd').textContent='Обновлено: '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
