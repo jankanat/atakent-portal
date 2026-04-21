@@ -114,6 +114,26 @@ select{padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;font-size:13p
 .mcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mkv{font-size:12px}
 .mkv b{display:block;color:#94a3b8;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
+.mcard-top{
+  display:flex;
+  gap:8px;
+  margin-bottom:8px;
+}
+.mcard-top .ni{
+  width:92px;
+  min-height:40px;
+  font-size:14px;
+  font-weight:700;
+}
+.btn.thumb{
+  flex:1;
+  min-height:40px;
+  font-size:14px;
+  font-weight:700;
+}
+.mcard-note{
+  margin-top:8px;
+}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead{background:#fafafa;position:static;top:auto;z-index:auto}
 th{font-weight:600;font-size:11px;color:#666;text-align:left;padding:10px 12px;border-bottom:1px solid #e5e5e5;white-space:nowrap}
@@ -838,6 +858,10 @@ body.dark .mcard{
 body.dark .mcard-title{color:#e2e8f0}
 body.dark .mkv{color:#cbd5e1}
 body.dark .mkv b{color:#8ea2c8}
+body.dark #page-supply #sup-toolbar{
+  background:linear-gradient(180deg,rgba(15,23,42,.92),rgba(12,20,38,.95));
+  border-color:rgba(99,115,148,.28);
+}
 body.dark .uzone.dragover{
   border-color:#a78bfa!important;
   box-shadow:0 0 0 3px rgba(139,92,246,.22);
@@ -1173,14 +1197,43 @@ body.dark .qr-caption{color:#94a3b8}
   .mobile-nav-backdrop{display:block}
   body:not(.mobile-nav-open) .mobile-nav-backdrop{display:none}
   .main{margin-left:0}
-  .topbar{padding:10px 12px}
+  .topbar{
+    padding:8px 10px;
+    border-radius:10px;
+    margin:8px 8px 0;
+  }
+  .topbar h2{font-size:15px}
+  .topbar-copy{gap:2px}
+  .topbar-actions{gap:6px}
+  .topbar-actions .lupd{font-size:11px}
   .content{padding:10px 12px}
   .controls{padding:8px}
+  #page-supply #sup-toolbar{
+    position:sticky;
+    top:6px;
+    z-index:25;
+    border-radius:12px;
+    backdrop-filter:blur(8px);
+  }
+  #page-supply #sup-toolbar .toolbar-group{
+    width:100%;
+  }
+  #page-supply #sup-toolbar .toolbar-group .btn{
+    flex:1;
+  }
   #page-supply .tw,#page-tmc .tw,#page-spec .tw{display:none}
   #page-supply .mobile-cards,#page-tmc .mobile-cards,#page-spec .mobile-cards{display:block}
   .stats.s4,.stats.s5{grid-template-columns:repeat(2,1fr)}
   .stats.s3{grid-template-columns:repeat(3,1fr)}
   .btn{min-height:36px}
+  .mcard{
+    padding:10px 10px 12px;
+    margin-bottom:10px;
+  }
+  .mcard-grid{
+    grid-template-columns:1fr 1fr;
+    gap:6px 8px;
+  }
 }
 </style>
 </head>
@@ -2576,9 +2629,9 @@ window.renderSup=()=>{
       const pendingToPost=calcSupPendingToPost(it);
       const statusText=it.status==='arrived'?'Приехало':it.status==='partial'?'Частично':'Ожидает';
       const actionBtn=pendingToPost>0
-        ? `<button class="btn sup-post-btn" onclick="postSupToInv(${idx})">↗ В ТМЦ</button>`
+        ? `<button class="btn sup-post-btn thumb" onclick="postSupToInv(${idx})">↗ В ТМЦ</button>`
         : ((parseInt(it.arrived)||0)>0?`<span class="bx bgy sup-state">Учтено</span>`:`<span class="bx bgy sup-state">Нет прихода</span>`);
-      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Приехало</b><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Действие</b>${actionBtn}</div><div class="mkv"><b>Заметка</b><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div></div>`;
+      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-top"><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)" title="Приехало"><div style="flex:1">${actionBtn}</div></div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div></div><div class="mcard-note"><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div>`;
     }).join('')||'<div class="empty">Ничего не найдено</div>';
   }
   const tot=supItems.length,done=supItems.filter(i=>i.status==='arrived').length,wait=supItems.filter(i=>i.status==='waiting').length;
