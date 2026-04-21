@@ -101,7 +101,7 @@ select{padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;font-size:13p
 .tag{font-size:12px;background:#f0eeff;color:#7b2fff;padding:4px 10px;border-radius:20px}
 .tw{background:#fff;border-radius:12px;border:1px solid #e5e5e5;overflow:hidden}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead{background:#fafafa;position:sticky;top:0;z-index:2}
+thead{background:#fafafa;position:static;top:auto;z-index:auto}
 th{font-weight:600;font-size:11px;color:#666;text-align:left;padding:10px 12px;border-bottom:1px solid #e5e5e5;white-space:nowrap}
 td{padding:8px 12px;border-bottom:1px solid #f0f0f0;vertical-align:middle;word-break:break-word}
 tr:last-child td{border-bottom:none}
@@ -249,6 +249,35 @@ body{
 }
 .theme-toggle:hover{box-shadow:0 0 0 3px rgba(123,47,255,.12)}
 .topbar-actions{display:flex;align-items:center;gap:8px}
+.audit-icon-btn{
+  width:28px;
+  height:28px;
+  border-radius:7px;
+  border:1px solid rgba(148,163,184,.28);
+  background:rgba(255,255,255,0.12);
+  color:#7b8ba3;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  line-height:0;
+  backdrop-filter:blur(4px);
+  transition:all .16s ease;
+}
+.audit-icon-btn:hover{
+  color:#56657d;
+  border-color:rgba(100,116,139,.44);
+  background:rgba(255,255,255,0.24);
+}
+.audit-icon{
+  width:14px;
+  height:14px;
+  stroke:currentColor;
+  stroke-width:1.9;
+  fill:none;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
 .lupd{font-size:12px;color:#64748b}
 .topbar-title-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .topbar-loss-switch{margin-bottom:0}
@@ -471,6 +500,63 @@ body{
 .toolbar-group{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .toolbar-group.grow{flex:1;min-width:260px}
 .toolbar-sep{width:1px;height:24px;background:#e5e7eb}
+.sup-actions{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.sup-post-btn{
+  min-height:24px;
+  padding:4px 10px;
+  border-radius:8px;
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.1px;
+}
+.sup-state{
+  justify-content:center;
+  min-height:24px;
+  font-size:11px;
+}
+#page-supply .toolbar{
+  padding:10px;
+  border-radius:14px;
+}
+#page-supply .toolbar .btn{
+  min-height:30px;
+  padding:5px 12px;
+  border-radius:9px;
+}
+#page-supply #sup-import-file,
+#page-supply #sup-add-pos,
+#page-supply #sup-export{
+  min-width:124px;
+  justify-content:center;
+}
+#page-supply .toolbar #sup-import-file{
+  background:linear-gradient(135deg,#6c45c6,#4f46b8);
+  border-color:#5c3fae;
+  color:#eef2ff;
+}
+#page-supply .toolbar #sup-add-pos{
+  background:linear-gradient(180deg,#172033,#0f172a);
+  border-color:#3b4960;
+  color:#d8e1f3;
+}
+#page-supply .toolbar #sup-add-pos:hover{
+  background:linear-gradient(180deg,#1a2740,#111b2f);
+}
+#page-supply .sup-actions .nit{
+  min-height:24px;
+  padding:3px 8px;
+  border-radius:8px;
+}
+#page-supply .sup-actions .nit::placeholder{
+  color:#7c8aa3;
+}
+#page-supply tbody tr:hover td{
+  background:#f4f8ff;
+}
 .info-chip{
   display:inline-flex;
   align-items:center;
@@ -763,18 +849,21 @@ body.dark .sched-cell.day{background:rgba(22,163,74,.22);color:#bbf7d0;border-co
 body.dark .sched-cell.night{background:rgba(8,145,178,.24);color:#bae6fd;border-color:rgba(6,182,212,.32)}
 body.dark .sched-cell.off{background:rgba(51,65,85,.48);color:#cbd5e1;border-color:rgba(100,116,139,.34)}
 body.dark .sched-cell.today{box-shadow:inset 0 0 0 1px rgba(196,181,253,.34), 0 4px 10px rgba(76,29,149,.16)}
+body.dark thead{
+  background:linear-gradient(90deg,rgba(18,26,42,.96),rgba(16,34,52,.94));
+}
 body.dark th{
-  color:#9fb1d3;
-  background:linear-gradient(180deg,rgba(20,30,46,.68),rgba(14,22,36,.68));
-  border-bottom-color:rgba(99,115,148,.18);
+  color:#a9bbda;
+  background:linear-gradient(90deg,rgba(92,58,170,.08),rgba(18,130,186,.06));
+  border-bottom-color:rgba(99,115,148,.22);
 }
 body.dark #page-supply thead{
-  background:linear-gradient(180deg,rgba(16,24,38,.62),rgba(12,18,30,.62));
+  background:linear-gradient(90deg,rgba(18,26,42,.96),rgba(16,34,52,.94));
 }
 body.dark #page-supply th{
-  color:#8fa4ca;
-  background:transparent;
-  border-bottom-color:rgba(99,115,148,.15);
+  color:#a9bbda;
+  background:linear-gradient(90deg,rgba(92,58,170,.08),rgba(18,130,186,.06));
+  border-bottom-color:rgba(99,115,148,.22);
 }
 body.dark #tsd-all-sn td:first-child,
 body.dark #tsd-sn-body td:first-child{
@@ -894,6 +983,28 @@ body.dark .toolbar.dragover{
   box-shadow:0 0 0 3px rgba(139,92,246,.22);
 }
 body.dark .toolbar-sep{background:rgba(99,115,148,.35)}
+body.dark .sup-post-btn{
+  background:linear-gradient(135deg,#0f8a79,#0f9e72);
+  border-color:#0f8a79;
+  color:#e9fbff;
+  box-shadow:0 4px 10px rgba(15,138,121,.18);
+}
+body.dark .sup-state{
+  color:#a9bbda;
+  background:rgba(51,65,85,.42);
+  border-color:rgba(99,115,148,.34);
+}
+body.dark #page-supply .sup-actions .nit{
+  background:linear-gradient(180deg,#0f1728,#0c1424)!important;
+  border-color:#445168!important;
+  color:#dbe6fb!important;
+}
+body.dark #page-supply .sup-actions .nit::placeholder{
+  color:#93a3bf;
+}
+body.dark #page-supply tbody tr:hover td{
+  background:linear-gradient(90deg,rgba(76,29,149,.18),rgba(14,165,233,.08))!important;
+}
 body.dark .info-chip{
   background:rgba(30,41,59,.62);
   border-color:rgba(99,115,148,.35);
@@ -913,20 +1024,22 @@ body.dark .htab-btn:hover{
   color:#e2e8f0;
 }
 body.dark .btn.p{
-  background:linear-gradient(135deg,#7c3aed,#4f46e5);
-  border-color:#7c3aed;
-  color:#fff;
-  box-shadow:0 10px 20px rgba(124,58,237,.32);
+  background:linear-gradient(135deg,#6b46c1,#4f46b8);
+  border-color:#5f3fb0;
+  color:#eef2ff;
+  box-shadow:0 4px 10px rgba(79,70,184,.20);
 }
 body.dark .btn.g{
-  background:linear-gradient(135deg,#059669,#0ea5a3);
-  border-color:#059669;
-  color:#ecfeff;
+  background:linear-gradient(135deg,#0f8a79,#0f9e72);
+  border-color:#0f8a79;
+  color:#e9fbff;
+  box-shadow:0 4px 10px rgba(15,138,121,.20);
 }
 body.dark .btn.d{
-  background:linear-gradient(135deg,#dc2626,#b91c1c);
-  border-color:#dc2626;
-  color:#fff1f2;
+  background:linear-gradient(135deg,#b91f2f,#981a29);
+  border-color:#a61e2d;
+  color:#fff4f6;
+  box-shadow:0 4px 10px rgba(166,30,45,.18);
 }
 body.dark .htab-btn.act{
   background:linear-gradient(135deg,#7c3aed 0%,#5b21b6 100%);
@@ -943,6 +1056,16 @@ body.dark .theme-toggle .knob{
   background:#0b1220;
   border-color:#51607a;
   box-shadow:0 3px 12px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.05);
+}
+body.dark .audit-icon-btn{
+  background:rgba(15,23,42,0.28);
+  border-color:rgba(148,163,184,.26);
+  color:#7f8ea6;
+}
+body.dark .audit-icon-btn:hover{
+  color:#a8b6cc;
+  border-color:rgba(148,163,184,.45);
+  background:rgba(30,41,59,0.5);
 }
 body.dark .lupd{color:#94a3b8}
 body.dark .qr-container{background:#111827;border-color:#374151}
@@ -1009,7 +1132,7 @@ body.dark .qr-caption{color:#94a3b8}
     </button>
   </div>
   <nav class="sidebar-nav">
-    <div class="nav-item active" onclick="goTo('dash',this)" id="nav-dash"><div class="nav-dot"></div>Главная</div>
+    <div class="nav-item" onclick="goTo('dash',this)" id="nav-dash"><div class="nav-dot"></div>Главная</div>
     <div class="nav-section">ТМЦ</div>
     <div class="nav-item" onclick="goTo('tmc',this)" id="nav-tmc"><div class="nav-dot"></div>Остаток ТМЦ</div>
     <div class="nav-item" onclick="goTo('spec',this)" id="nav-spec"><div class="nav-dot"></div>Остаток спецодежды</div>
@@ -1038,13 +1161,21 @@ body.dark .qr-caption{color:#94a3b8}
       <div class="topbar-subtitle" id="psubtitle"></div>
     </div>
     <div class="topbar-actions">
+      <button class="audit-icon-btn" onclick="openAuditLog()" title="Журнал действий" aria-label="Журнал действий">
+        <svg class="audit-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M8 5h8"></path>
+          <path d="M8 10h8"></path>
+          <path d="M8 15h5"></path>
+          <path d="M6 3h12a1 1 0 0 1 1 1v16l-2-1.5L15 20l-3-1.5L9 20l-2-1.5L5 20V4a1 1 0 0 1 1-1z"></path>
+        </svg>
+      </button>
       <span class="lupd" id="lupd"></span>
     </div>
   </div>
   <div class="content">
 
 <!-- DASH -->
-<div class="page active" id="page-dash">
+<div class="page" id="page-dash">
   <div class="stats s4" style="margin-bottom:20px">
     <div class="stat"><div class="stat-label">Критичных позиций</div><div class="stat-val red" id="d-kpi-crit">—</div></div>
     <div class="stat"><div class="stat-label">Новых потерь</div><div class="stat-val amber" id="d-kpi-loss-new">—</div></div>
@@ -1146,7 +1277,7 @@ body.dark .qr-caption{color:#94a3b8}
       </div>
       <span class="toolbar-sep"></span>
       <div class="toolbar-group">
-        <button class="btn p" id="sup-import-file">⇪ Импорт Excel</button>
+        <button class="btn" id="sup-import-file">⇪ Импорт Excel</button>
         <button class="btn" id="sup-add-pos" onclick="openAddSupItem()">+ Добавить позицию</button>
         <div class="htab" style="margin-bottom:0">
           <button class="htab-btn act" id="sup-view-active" onclick="setSupView('active')">Текущие</button>
@@ -1155,14 +1286,14 @@ body.dark .qr-caption{color:#94a3b8}
       </div>
       <span class="toolbar-sep"></span>
       <div class="toolbar-group">
-        <button class="btn g" onclick="exportSupXLSX()">↓ Excel</button>
+        <button class="btn g" id="sup-export" onclick="exportSupXLSX()">↓ Excel</button>
         <span class="info-chip" id="sup-tag"></span>
         <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('supply')">Админ: Очистить</button>
         <button class="btn admin-reset-btn" style="display:none" onclick="adminRestoreModule('supply')">Админ: Восстановить</button>
       </div>
     </div>
     <div class="tw"><table>
-      <thead><tr><th style="width:36%">Наименование</th><th style="width:9%">Ед.</th><th style="width:8%">Заказ</th><th style="width:12%">Приехало</th><th style="width:12%">Статус</th><th style="width:23%">Заметка</th></tr></thead>
+      <thead><tr><th style="width:30%">Наименование</th><th style="width:8%">Ед.</th><th style="width:8%">Заказ</th><th style="width:11%">Приехало</th><th style="width:10%">Перенесено</th><th style="width:10%">К переносу</th><th style="width:10%">Статус</th><th style="width:13%">Действие</th></tr></thead>
       <tbody id="sup-body"></tbody>
     </table></div>
   </div>
@@ -1389,7 +1520,7 @@ body.dark .qr-caption{color:#94a3b8}
   <div class="modal">
     <h3 id="m-inv-title">Приход</h3>
     <div class="mr"><label>Наименование</label><select id="m-inv-name" style="width:100%"></select></div>
-    <div class="mr"><label>Количество</label><input type="number" id="m-inv-qty" min="1" value="1"></div>
+    <div class="mr"><label>Количество</label><input type="number" id="m-inv-qty" min="1" value=""></div>
     <div class="mr"><label>Дата</label><input type="date" id="m-inv-date"></div>
     <div class="mr"><label>Комментарий (необязательно)</label><input type="text" id="m-inv-note"></div>
     <div class="mbtns"><button class="btn" onclick="closeM('m-inv')">Отмена</button><button class="btn p" id="m-inv-ok" onclick="submitInv()">Сохранить</button></div>
@@ -1496,6 +1627,21 @@ body.dark .qr-caption{color:#94a3b8}
   </div>
 </div>
 
+<div class="mbg hidden" id="m-audit">
+  <div class="modal" style="max-width:980px">
+    <h3>Журнал действий</h3>
+    <div class="controls" style="margin-bottom:10px">
+      <button class="btn g" onclick="exportAuditSnapshotXLSX('month')">↓ Срез за месяц</button>
+      <button class="btn g" onclick="exportAuditSnapshotXLSX('shift')">↓ Срез за смену (Алматы 08:00–20:00)</button>
+    </div>
+    <div id="m-audit-body" style="max-height:56vh;overflow:auto"></div>
+    <div class="mbtns">
+      <button class="btn" onclick="clearAuditLog()">Очистить журнал</button>
+      <button class="btn p" onclick="closeM('m-audit')">Закрыть</button>
+    </div>
+  </div>
+</div>
+
 <input type="file" id="sup-file-inp" accept=".xlsx,.xls" style="display:none">
 <input type="file" id="lin-file-inp" accept=".xlsx,.xls" style="display:none">
 <input type="file" id="lout-file-inp" accept=".xlsx,.xls" style="display:none">
@@ -1552,6 +1698,8 @@ let charts={linR:null,linT:null,loutR:null,loutO:null};
 let invType='tmc', invAction='add';
 let invThrItemName='';
 let schedWeekOff=0;
+const AUDIT_LOG_KEY='atakent_audit_log_v1';
+const APP_TIMEZONE='Asia/Almaty';
 const ZONES=['Исходящий поток','Входящий поток','Отгрузка','Упаковка','Аналитика'];
 const TSD_ZONE_CANON=['Исходящий поток','Входящий поток','Отгрузка','Упаковка'];
 const TSD_ZONE_ALIASES={
@@ -1572,6 +1720,38 @@ const SCHED_BASE_PEOPLE=[...PEOPLE,...ANALYSTS];
 const ADMIN_RESET_PASSWORD='218987';
 let adminUnlockClicks=0;
 let adminUnlockTimer=null;
+function readAuditLog(){
+  try{return JSON.parse(localStorage.getItem(AUDIT_LOG_KEY)||'[]')||[];}catch{return [];}
+}
+function writeAuditLog(list){
+  localStorage.setItem(AUDIT_LOG_KEY,JSON.stringify(list||[]));
+}
+function addAuditLog(module,action,detail=''){
+  const list=readAuditLog();
+  list.unshift({at:new Date().toISOString(),module,action,detail});
+  if(list.length>300)list.length=300;
+  writeAuditLog(list);
+}
+function tzParts(dateObj=new Date()){
+  const parts=new Intl.DateTimeFormat('en-CA',{
+    timeZone:APP_TIMEZONE,
+    year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false
+  }).formatToParts(dateObj);
+  const pick=t=>parts.find(p=>p.type===t)?.value||'00';
+  return {year:pick('year'),month:pick('month'),day:pick('day'),hour:pick('hour'),minute:pick('minute'),second:pick('second')};
+}
+function tzDateKey(dateObj=new Date()){
+  const p=tzParts(dateObj);return `${p.year}-${p.month}-${p.day}`;
+}
+function tzMonthKey(dateObj=new Date()){
+  const p=tzParts(dateObj);return `${p.year}-${p.month}`;
+}
+function fmtTimeAlmaty(dateObj=new Date()){
+  return new Intl.DateTimeFormat('ru-RU',{timeZone:APP_TIMEZONE,hour:'2-digit',minute:'2-digit'}).format(dateObj);
+}
+function fmtDateTimeAlmaty(dateObj){
+  return new Intl.DateTimeFormat('ru-RU',{timeZone:APP_TIMEZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(dateObj);
+}
 
 function normalizeSchedPeople(list){
   const map=new Map();
@@ -1785,6 +1965,52 @@ function notify(msg,type='info'){
   setTimeout(()=>{n.style.opacity='0';n.style.transform='translateY(6px)';},2600);
   setTimeout(()=>n.remove(),3200);
 }
+window.openAuditLog=()=>{
+  const body=document.getElementById('m-audit-body');
+  if(!body)return;
+  const rows=readAuditLog();
+  body.innerHTML=rows.length
+    ? `<div class="tw"><table><thead><tr><th style="width:18%">Время (Алматы)</th><th style="width:18%">Модуль</th><th style="width:22%">Действие</th><th style="width:42%">Детали</th></tr></thead><tbody>${rows.map(r=>`<tr><td style="font-size:12px">${fmtDateTimeAlmaty(new Date(r.at))}</td><td>${r.module||''}</td><td>${r.action||''}</td><td style="font-size:12px">${r.detail||'—'}</td></tr>`).join('')}</tbody></table></div>`
+    : '<div class="empty">Журнал пока пуст</div>';
+  document.getElementById('m-audit').classList.remove('hidden');
+};
+window.clearAuditLog=()=>{
+  if(!confirm('Очистить журнал действий?'))return;
+  writeAuditLog([]);
+  openAuditLog();
+};
+window.exportAuditSnapshotXLSX=(mode='month')=>{
+  const monthValue=tzMonthKey(new Date());
+  const monthStart=`${monthValue}-01`;
+  const monthEnd=new Date(Number(monthValue.slice(0,4)),Number(monthValue.slice(5,7)),0).toISOString().slice(0,10);
+  const inMonth=d=>{if(!d)return false;const key=String(d).slice(0,10);return key>=monthStart&&key<=monthEnd;};
+  const supplyDate=i=>{const raw=i.createdAt||i.date||supUpdatedAt||'';const dt=new Date(raw);return Number.isNaN(dt.getTime())?'':dt.toISOString().slice(0,10);};
+  const tmcCrit=TMC_ITEMS.filter(n=>{const it=invData.tmc[n]||{};const thr=getItemThreshold('tmc',it);return getSt(calcQ(it),thr.amber,thr.red)==='crit';}).length;
+  const specCrit=SPEC_ITEMS.filter(n=>{const it=invData.spec[n]||{};const thr=getItemThreshold('spec',it);return getSt(calcQ(it),thr.amber,thr.red)==='crit';}).length;
+  const supWait=supItems.filter(i=>i.status==='waiting'&&inMonth(supplyDate(i))).length;
+  const linNew=lossIn.filter(i=>(!i.status||i.status==='new')&&inMonth(i.date)).length;
+  const loutNew=lossOut.filter(i=>(!i.status||i.status==='new')&&inMonth(i.date)).length;
+  const lostSum=lossOut.filter(i=>i.status==='notfound'&&inMonth(i.date)).reduce((s,i)=>s+(parseFloat(String(i.sum||'').replace(/[^\d.]/g,''))||0),0);
+  const summary=[['Показатель','Значение'],['Период',mode==='shift'?'Смена Алматы 08:00–20:00':'Текущий месяц (Алматы)'],['Критичных позиций',tmcCrit+specCrit],['Новых потерь',linNew+loutNew],['Поставок ожидает',supWait],['Сумма потерь (LR32)',Math.round(lostSum)]];
+  const recent=[['Время','Модуль','Действие','Детали']];
+  const todayKey=tzDateKey(new Date());
+  const filteredLogs=readAuditLog().filter(r=>{
+    const dt=new Date(r.at);
+    if(mode==='month'){
+      return tzMonthKey(dt)===monthValue;
+    }
+    const p=tzParts(dt);
+    const hour=Number(p.hour);
+    return `${p.year}-${p.month}-${p.day}`===todayKey&&hour>=8&&hour<20;
+  }).slice(0,200);
+  filteredLogs.forEach(r=>recent.push([fmtDateTimeAlmaty(new Date(r.at)),r.module||'',r.action||'',r.detail||'']));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),'Сводка');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(recent),'Журнал');
+  const fileSuffix=mode==='shift'?'смена':'месяц';
+  XLSX.writeFile(wb,`Срез_${fileSuffix}_`+new Date().toLocaleDateString('ru-RU')+'.xlsx');
+  addAuditLog('Главная','Экспорт среза',`Режим: ${mode==='shift'?'смена':'месяц'} • записей: ${filteredLogs.length}`);
+};
 window.goFromAttention=(target)=>{
   const navMap={dash:'nav-dash',tmc:'nav-tmc',spec:'nav-spec',supply:'nav-supply',tsd:'nav-tsd',loss:'nav-loss',sched:'nav-sched',qr:'nav-qr'};
   const navEl=document.getElementById(navMap[target]||'nav-dash');
@@ -1803,6 +2029,23 @@ window.toggleTheme=()=>{
   const btn=document.getElementById('theme-toggle');
   if(btn)btn.setAttribute('aria-pressed',dark?'true':'false');
 };
+function setupZeroClearInputs(){
+  // Prevent "0120" issue when operators start typing over zero.
+  document.addEventListener('focusin',e=>{
+    const el=e.target;
+    if(!(el instanceof HTMLInputElement))return;
+    if(el.type!=='number')return;
+    if(el.dataset.zeroClear==='off')return;
+    if(String(el.value).trim()==='0')el.value='';
+  });
+  document.addEventListener('focusout',e=>{
+    const el=e.target;
+    if(!(el instanceof HTMLInputElement))return;
+    if(el.type!=='number')return;
+    if(el.dataset.zeroClear==='off')return;
+    if(String(el.value).trim()==='')el.value='0';
+  });
+}
 function setupAdminResetAccess(){
   const syncBar=document.querySelector('.sync-bar');
   const buttons=[...document.querySelectorAll('.admin-reset-btn')];
@@ -1824,7 +2067,7 @@ async function saveDoc(ref,data){
     setSS('saving','Сохранение...');
     await setDoc(ref,data);
     setSS('on','Синхронизировано');
-    document.getElementById('lupd').textContent='Обновлено: '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+    document.getElementById('lupd').textContent='Обновлено: '+fmtTimeAlmaty(new Date());
   }catch(e){
     setSS('err','Ошибка сохранения');
     notify('Не удалось сохранить изменения. Проверьте подключение.', 'err');
@@ -1948,7 +2191,7 @@ window.openInvModal=(type,action)=>{
   document.getElementById('m-inv-ok').textContent=action==='add'?'Добавить':'Списать';
   document.getElementById('m-inv-ok').className=action==='add'?'btn p':'btn d';
   document.getElementById('m-inv-date').value=new Date().toISOString().split('T')[0];
-  document.getElementById('m-inv-qty').value='1';
+  document.getElementById('m-inv-qty').value='';
   document.getElementById('m-inv-note').value='';
   document.getElementById('m-inv').classList.remove('hidden');
 };
@@ -1959,6 +2202,20 @@ window.submitInv=async()=>{
   const date=document.getElementById('m-inv-date').value;
   const note=document.getElementById('m-inv-note').value;
   if(qty<=0){closeM('m-inv');return;}
+  const actionLabel=invAction==='add'?'Приход':'Расход';
+  const moduleLabel=invType==='tmc'?'ТМЦ':'спецодежда';
+  const ok=confirm(
+    `Подтвердить действие?\n`+
+    `Модуль: ${moduleLabel}\n`+
+    `Операция: ${actionLabel}\n`+
+    `Наименование: ${name}\n`+
+    `Количество: ${qty}\n`+
+    `Дата: ${date||'—'}`
+  );
+  if(!ok){
+    notify('Действие отменено.', 'info');
+    return;
+  }
   const ref=doc(db,'inventory',invType);
   const snap=await getDoc(ref);
   const data=snap.data()||{};
@@ -1972,6 +2229,7 @@ window.submitInv=async()=>{
     data[name].log.push({type:'expense',qty,date,note});
   }
   await saveDoc(ref,data);
+  addAuditLog(invType==='tmc'?'ТМЦ':'Спецодежда',invAction==='add'?'Приход':'Расход',`${name} • qty: ${qty}`);
   closeM('m-inv');
 };
 
@@ -2002,6 +2260,12 @@ window.exportInvXLSX=(type)=>{
 
 // SUPPLY
 let supFmtV='budget';
+function normalizeSupplyItems(list){
+  return (list||[]).map(it=>({
+    ...it,
+    postedToInv:Math.max(0,parseInt(it?.postedToInv)||0)
+  }));
+}
 window.setSupFmt=(f)=>{
   supFmtV=f;
   document.getElementById('sup-bb').className='btn'+(f==='budget'?' p':'');
@@ -2013,14 +2277,14 @@ async function initSupply(){
   const snap=await getDoc(ref);
   if(snap.exists()){
     const payload=snap.data()||{};
-    supItems=payload.items||[];
+    supItems=normalizeSupplyItems(payload.items||[]);
     supUpdatedAt=payload.updatedAt||'';
     showSupMain();renderSup();
   }
   onSnapshot(ref,s=>{
     if(s.exists()){
       const payload=s.data()||{};
-      supItems=payload.items||[];
+      supItems=normalizeSupplyItems(payload.items||[]);
       supUpdatedAt=payload.updatedAt||'';
       showSupMain();renderSup();
     }
@@ -2041,7 +2305,7 @@ function parseSupBudget(wb){
     const r=rows[i];if(String(r[0]).toLowerCase().indexOf('атакент')===-1)continue;
     const name=String(r[10]).trim().replace(/\n/g,' ');if(!name)continue;
     const qty=parseFloat(r[12])||0;if(qty===0)continue;
-    res.push({name,unit:String(r[11]).trim()||'шт',qty,arrived:0,status:'waiting',note:''});
+    res.push({name,unit:String(r[11]).trim()||'шт',qty,arrived:0,status:'waiting',note:'',postedToInv:0});
   }
   return res;
 }
@@ -2083,7 +2347,7 @@ function parseSupNeed(wb){
       if(!name)continue;
       const qty=toNum(targetRow[c]);
       if(qty<=0)continue;
-      res.push({name,unit:String(units[c]||'').trim()||'шт',qty,arrived:0,status:'waiting',note:''});
+      res.push({name,unit:String(units[c]||'').trim()||'шт',qty,arrived:0,status:'waiting',note:'',postedToInv:0});
     }
     return res;
   };
@@ -2099,16 +2363,33 @@ function mergeSupply(existing,newItems){
   const merged=[...existing];
   newItems.forEach(ni=>{
     const idx=merged.findIndex(e=>e.name===ni.name);
-    if(idx>=0){merged[idx].qty=Math.max(merged[idx].qty,ni.qty);}
-    else{merged.push(ni);}
+    if(idx>=0){
+      merged[idx].qty=Math.max(merged[idx].qty,ni.qty);
+      if(typeof merged[idx].postedToInv!=='number')merged[idx].postedToInv=0;
+    } else {
+      merged.push({...ni,postedToInv:0});
+    }
   });
   return merged;
+}
+function getWorkbookDiagnostics(wb){
+  const firstSheet=wb.SheetNames?.[0]||'—';
+  const firstRows=firstSheet&&wb.Sheets[firstSheet]
+    ? XLSX.utils.sheet_to_json(wb.Sheets[firstSheet],{header:1,defval:'',range:0}).slice(0,2)
+    : [];
+  const headerSample=(firstRows[0]||[]).slice(0,6).map(v=>String(v||'').trim()).filter(Boolean).join(' | ');
+  return {
+    sheetCount:wb.SheetNames?.length||0,
+    firstSheet,
+    headerSample:headerSample||'пусто'
+  };
 }
 
 function loadSupFile(file){
   const reader=new FileReader();
   reader.onload=async(ev)=>{
     const wb=XLSX.read(ev.target.result,{type:'array'});
+    const diag=getWorkbookDiagnostics(wb);
     const parsedBudget=parseSupBudget(wb);
     const parsedNeed=parseSupNeed(wb);
     let parsed=supFmtV==='budget'?parsedBudget:parsedNeed;
@@ -2133,6 +2414,7 @@ function loadSupFile(file){
     const okToImport=confirm(
       `Подтвердить импорт файла?\n`+
       `Файл: ${file.name||'без имени'}\n`+
+      `Листов: ${diag.sheetCount} | 1-й лист: ${diag.firstSheet}\n`+
       `Формат: ${detectedFmt==='need'?'Потребность':'Бюджет'}\n`+
       `Найдено позиций: ${parsed.length}\n`+
       `Новых позиций: ${addedUnique}\n`+
@@ -2145,6 +2427,7 @@ function loadSupFile(file){
     supItems=mergedPreview;
     const ref=doc(db,'supply','current');
     await saveDoc(ref,{items:supItems,updatedAt:new Date().toISOString()});
+    addAuditLog('Поставки','Импорт файла',`${file.name||'без имени'} • формат: ${detectedFmt} • найдено: ${parsed.length} • новых: ${addedUnique}`);
     showSupMain();renderSup();
   };
   reader.readAsArrayBuffer(file);
@@ -2157,6 +2440,9 @@ setupFileDropZone('sup-upload',file=>loadSupFile(file));
 setupFileDropZone('sup-toolbar',file=>loadSupFile(file));
 
 function calcSupSt(it){if(it.arrived<=0)return'waiting';if(it.qty>0&&it.arrived>=it.qty)return'arrived';return'partial';}
+function calcSupPendingToPost(it){
+  return Math.max(0,(parseInt(it.arrived)||0)-(parseInt(it.postedToInv)||0));
+}
 
 window.renderSup=()=>{
   if(!document.getElementById('sup-body'))return;
@@ -2170,9 +2456,17 @@ window.renderSup=()=>{
   const fil=supItems.filter(it=>it.name.toLowerCase().includes(q)&&(f==='all'||it.status===f));
   document.getElementById('sup-body').innerHTML=fil.map(it=>{
     const idx=supItems.indexOf(it);
+    const posted=parseInt(it.postedToInv)||0;
+    const pendingToPost=calcSupPendingToPost(it);
     const badge=it.status==='arrived'?'<span class="bx bg">Приехало</span>':it.status==='partial'?'<span class="bx bb">Частично</span>':'<span class="bx ba">Ожидает</span>';
-    return`<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.qty}</td><td><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></td><td>${badge}</td><td><input class="nit" type="text" value="${it.note||''}" placeholder="..." onchange="updSupNote(${idx},this.value)"></td></tr>`;
-  }).join('')||'<tr><td colspan="6" class="empty">Ничего не найдено</td></tr>';
+    const arrivedQty=parseInt(it.arrived)||0;
+    const actionBtn=pendingToPost>0
+      ? `<button class="btn sup-post-btn" onclick="postSupToInv(${idx})">↗ В ТМЦ</button>`
+      : (arrivedQty>0
+        ? `<span class="bx bgy sup-state">Учтено</span>`
+        : `<span class="bx bgy sup-state">Нет прихода</span>`);
+    return`<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.qty}</td><td><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></td><td>${posted}</td><td>${pendingToPost}</td><td>${badge}</td><td><div class="sup-actions">${actionBtn}<input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></td></tr>`;
+  }).join('')||'<tr><td colspan="8" class="empty">Ничего не найдено</td></tr>';
   const tot=supItems.length,done=supItems.filter(i=>i.status==='arrived').length,wait=supItems.filter(i=>i.status==='waiting').length;
   document.getElementById('sup-total').textContent=tot;
   document.getElementById('sup-done').textContent=done;
@@ -2194,8 +2488,10 @@ async function renderSupArrivedView(q){
   const all=[...currentArrived,...archivedRows];
   const fil=all.filter(it=>(it.name||'').toLowerCase().includes(q));
   document.getElementById('sup-body').innerHTML=fil.map(it=>{
-    return`<tr><td>${it.name}${it.date?` <span class="bx bgy" style="margin-left:6px">${it.date}</span>`:''}</td><td>${it.unit}</td><td>${it.qty}</td><td>${it.arrived}</td><td><span class="bx bg">Приехало</span></td><td>${it.note||'—'}</td></tr>`;
-  }).join('')||'<tr><td colspan="6" class="empty">Нет прибывших позиций</td></tr>';
+    const posted=parseInt(it.postedToInv)||0;
+    const pendingToPost=Math.max(0,(parseInt(it.arrived)||0)-posted);
+    return`<tr><td>${it.name}${it.date?` <span class="bx bgy" style="margin-left:6px">${it.date}</span>`:''}</td><td>${it.unit}</td><td>${it.qty}</td><td>${it.arrived}</td><td>${posted}</td><td>${pendingToPost}</td><td><span class="bx bg">Приехало</span></td><td><span class="bx bgy">Архив</span></td></tr>`;
+  }).join('')||'<tr><td colspan="8" class="empty">Нет прибывших позиций</td></tr>';
   document.getElementById('sup-tag').textContent=fil.length+' прибывших';
 }
 
@@ -2219,6 +2515,10 @@ window.updSup=async(idx,val)=>{
   if(!item)return;
   const prevStatus=item.status;
   item.arrived=Math.min(parseInt(val)||0,item.qty);
+  if((parseInt(item.postedToInv)||0)>item.arrived){
+    item.postedToInv=item.arrived;
+    notify('Перенесено в ТМЦ скорректировано до факта приезда.', 'info');
+  }
   item.status=calcSupSt(item);
   if(prevStatus!=='arrived' && item.status==='arrived'){
     const shouldClose=confirm(`Позиция "${item.name}" полностью закрыта (${item.arrived}/${item.qty}).\nПереместить в архив и закрыть позицию?`);
@@ -2232,6 +2532,33 @@ window.updSup=async(idx,val)=>{
   supTimer=setTimeout(async()=>{const ref=doc(db,'supply','current');await saveDoc(ref,{items:supItems,updatedAt:new Date().toISOString()});},1000);
 };
 window.updSupNote=(idx,val)=>{supItems[idx].note=val;};
+window.postSupToInv=async(idx)=>{
+  const item=supItems[idx];
+  if(!item)return;
+  const qty=calcSupPendingToPost(item);
+  if(qty<=0){notify('Нечего переносить в ТМЦ.', 'info');return;}
+  const isTMC=TMC_ITEMS.includes(item.name);
+  const isSpec=SPEC_ITEMS.includes(item.name);
+  if(!isTMC&&!isSpec){
+    notify('Позиция не найдена в справочнике ТМЦ/спецодежды.', 'err');
+    return;
+  }
+  const type=isTMC?'tmc':'spec';
+  const invRef=doc(db,'inventory',type);
+  const snap=await getDoc(invRef);
+  const data=snap.data()||{};
+  if(!data[item.name])data[item.name]={invent:0,expense:0,arrival:0,log:[]};
+  if(!data[item.name].log)data[item.name].log=[];
+  data[item.name].arrival=(data[item.name].arrival||0)+qty;
+  data[item.name].log.push({type:'arrival',qty,date:new Date().toLocaleDateString('ru-RU'),note:'Перенос из трекера поставок'});
+  await setDoc(invRef,data);
+  item.postedToInv=(parseInt(item.postedToInv)||0)+qty;
+  const ref=doc(db,'supply','current');
+  await saveDoc(ref,{items:supItems,updatedAt:new Date().toISOString()});
+  addAuditLog('Поставки','Перенос в ТМЦ',`${item.name} • qty: ${qty}`);
+  renderSup();
+  notify(`Перенесено в ${type==='tmc'?'ТМЦ':'спецодежду'}: ${qty}.`, 'ok');
+};
 window.resetSup=async()=>{
   if(!confirm('Очистить все позиции?'))return;
   supItems=[];
@@ -2257,7 +2584,7 @@ window.submitAddSupItem=async()=>{
   if(!name){closeM('m-sup-add');return;}
   const existing=supItems.find(i=>i.name===name);
   if(existing){existing.qty=Math.max(existing.qty,qty);}
-  else{supItems.push({name,unit,qty,arrived:0,status:'waiting',note:''});}
+  else{supItems.push({name,unit,qty,arrived:0,status:'waiting',note:'',postedToInv:0});}
   const ref=doc(db,'supply','current');
   await saveDoc(ref,{items:supItems,updatedAt:new Date().toISOString()});
   closeM('m-sup-add');
@@ -2282,9 +2609,13 @@ async function archiveSupplyItems(itemsToArchive, archiveNote='Из трекер
       const data=snap.data()||{};
       if(!data[item.name])data[item.name]={invent:0,expense:0,arrival:0,log:[]};
       if(!data[item.name].log)data[item.name].log=[];
-      data[item.name].arrival=(data[item.name].arrival||0)+item.arrived;
-      data[item.name].log.push({type:'arrival',qty:item.arrived,date:new Date().toLocaleDateString('ru-RU'),note:archiveNote});
-      await setDoc(invRef,data);
+      const qtyToPost=calcSupPendingToPost(item);
+      if(qtyToPost>0){
+        data[item.name].arrival=(data[item.name].arrival||0)+qtyToPost;
+        data[item.name].log.push({type:'arrival',qty:qtyToPost,date:new Date().toLocaleDateString('ru-RU'),note:archiveNote});
+        item.postedToInv=(parseInt(item.postedToInv)||0)+qtyToPost;
+        await setDoc(invRef,data);
+      }
     }
   }
 }
@@ -2329,12 +2660,12 @@ window.viewSupArchive=async()=>{
 };
 
 window.exportSupXLSX=()=>{
-  const rows=[['Наименование','Ед.','Заказ','Приехало','Статус','Заметка']];
+  const rows=[['Наименование','Ед.','Заказ','Приехало','Перенесено в ТМЦ','К переносу','Статус','Заметка']];
   if(supView==='arrived'){
     const currentArrived=supItems.filter(i=>i.status==='arrived');
-    currentArrived.forEach(it=>rows.push([it.name,it.unit,it.qty,it.arrived,'arrived',it.note||'']));
+    currentArrived.forEach(it=>rows.push([it.name,it.unit,it.qty,it.arrived,it.postedToInv||0,calcSupPendingToPost(it),'arrived',it.note||'']));
   }else{
-    supItems.forEach(it=>rows.push([it.name,it.unit,it.qty,it.arrived,it.status,it.note||'']));
+    supItems.forEach(it=>rows.push([it.name,it.unit,it.qty,it.arrived,it.postedToInv||0,calcSupPendingToPost(it),it.status,it.note||'']));
   }
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'Поставки');XLSX.writeFile(wb,'Поставки_'+new Date().toLocaleDateString('ru-RU')+'.xlsx');
 };
@@ -2624,6 +2955,7 @@ window.setSNStatus=async(zone,sn,newStatus)=>{
     }
   }
   await saveDoc(ref,data);
+  addAuditLog('ТСД / Оборудование','Смена статуса S/N',`${zone} • ${sn} -> ${newStatus}`);
   notify('Статус S/N обновлен.', 'ok');
 };
 
@@ -2670,6 +3002,7 @@ window.submitTSD=async()=>{
   }
   recalcZoneDevicesFromSN(data[zone]);
   await saveDoc(ref,data);
+  addAuditLog('ТСД / Оборудование','Добавление/обновление',`${zone} • ${model}${snsRaw?` • SN: ${snsRaw.split('\n').filter(Boolean).length}`:''}`);
   closeM('m-tsd');
   notify('Данные оборудования сохранены.', 'ok');
 };
@@ -2869,12 +3202,14 @@ async function importLossInFile(file){
   const reader=new FileReader();
   reader.onload=async ev=>{
     const wb=XLSX.read(ev.target.result,{type:'array'});
+    const diag=getWorkbookDiagnostics(wb);
     const parsed=parseLossIn(wb);
     const mergedPreview=mergeLoss(lossIn,parsed);
     const addedUnique=Math.max(0,mergedPreview.length-lossIn.length);
     const okToImport=confirm(
       `Подтвердить импорт файла?\n`+
       `Файл: ${file.name||'без имени'}\n`+
+      `Листов: ${diag.sheetCount} | 1-й лист: ${diag.firstSheet}\n`+
       `Найдено строк: ${parsed.length}\n`+
       `Новых записей: ${addedUnique}\n`+
       `Всего после импорта: ${mergedPreview.length}`
@@ -2885,6 +3220,7 @@ async function importLossInFile(file){
     }
     lossIn=mergedPreview;
     await saveDoc(doc(db,'loss','incoming'),{items:lossIn});
+    addAuditLog('Потери входящий','Импорт файла',`${file.name||'без имени'} • найдено: ${parsed.length} • новых: ${addedUnique}`);
     renderLoss('in');
   };
   reader.readAsArrayBuffer(file);
@@ -2895,12 +3231,14 @@ async function importLossOutFile(file){
   const reader=new FileReader();
   reader.onload=async ev=>{
     const wb=XLSX.read(ev.target.result,{type:'array'});
+    const diag=getWorkbookDiagnostics(wb);
     const parsed=parseLossOut(wb);
     const mergedPreview=mergeLoss(lossOut,parsed);
     const addedUnique=Math.max(0,mergedPreview.length-lossOut.length);
     const okToImport=confirm(
       `Подтвердить импорт файла?\n`+
       `Файл: ${file.name||'без имени'}\n`+
+      `Листов: ${diag.sheetCount} | 1-й лист: ${diag.firstSheet}\n`+
       `Найдено строк: ${parsed.length}\n`+
       `Новых записей: ${addedUnique}\n`+
       `Всего после импорта: ${mergedPreview.length}`
@@ -2911,6 +3249,7 @@ async function importLossOutFile(file){
     }
     lossOut=mergedPreview;
     await saveDoc(doc(db,'loss','outgoing'),{items:lossOut});
+    addAuditLog('Потери исходящий','Импорт файла',`${file.name||'без имени'} • найдено: ${parsed.length} • новых: ${addedUnique}`);
     renderLoss('out');
   };
   reader.readAsArrayBuffer(file);
@@ -3012,6 +3351,7 @@ window.saveLossWork=async()=>{
   arr[lossEditIdx].user_comment=document.getElementById('m-lw-comment').value;
   const ref=doc(db,'loss',lossEditTab==='in'?'incoming':'outgoing');
   await saveDoc(ref,{items:arr});
+  addAuditLog(lossEditTab==='in'?'Потери входящий':'Потери исходящий','Изменение статуса',`ШК: ${arr[lossEditIdx]?.shk||'—'} • ${arr[lossEditIdx]?.status||''}`);
   closeM('m-loss-work');
   renderLoss(lossEditTab);
 };
@@ -3142,6 +3482,7 @@ window.submitSched=async()=>{
   data.people=normalizeSchedPeople(data.people);
   if(!data.shifts[name])data.shifts[name]={};
   await saveDoc(ref,data);
+  addAuditLog('График','Добавление/обновление сотрудника',`${name} • ${zone}`);
   closeM('m-sched');
 };
 
@@ -3156,11 +3497,13 @@ window.exportSchedXLSX=()=>{
 
 // NAV
 const TITLES={dash:'Главная',tmc:'Остаток ТМЦ',spec:'Остаток спецодежды',supply:'Трекер заказов',tsd:'ТСД / Оборудование',loss:'Потери потоков',sched:'График',qr:'Генератор QR'};
+const ACTIVE_PAGE_KEY='atakent_active_page';
 window.goTo=(page,el)=>{
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
+  try{localStorage.setItem(ACTIVE_PAGE_KEY,page);}catch{}
   document.getElementById('ptitle').textContent=TITLES[page]||'';
   document.getElementById('psubtitle').textContent='';
   const lossSwitch=document.getElementById('topbar-loss-switch');
@@ -3198,7 +3541,7 @@ window.downloadQR=()=>{
 
 // DASHBOARD
 function updateDashboard() {
-  const monthValue=new Date().toISOString().slice(0,7);
+  const monthValue=tzMonthKey(new Date());
   const monthStart=`${monthValue}-01`;
   const monthEnd=new Date(Number(monthValue.slice(0,4)),Number(monthValue.slice(5,7)),0).toISOString().slice(0,10);
   const inMonth=d=>{
@@ -3272,12 +3615,15 @@ function updateDashboard() {
 setSS('saving','Подключение...');
 try{
   initTheme();
+  setupZeroClearInputs();
   initZoneSelects();
   setupAdminResetAccess();
   await Promise.all([initInv('tmc'),initInv('spec'),initTSD(),initLoss(),initSched(),initSupply()]);
   setSS('on','Синхронизировано');
-  document.getElementById('lupd').textContent='Обновлено: '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-  goTo('dash', document.querySelector('#nav-dash'));
+  document.getElementById('lupd').textContent='Обновлено: '+fmtTimeAlmaty(new Date());
+  const savedPageRaw=localStorage.getItem(ACTIVE_PAGE_KEY)||'dash';
+  const savedPage=TITLES[savedPageRaw]?savedPageRaw:'dash';
+  goTo(savedPage, document.querySelector(`#nav-${savedPage}`) || document.querySelector('#nav-dash'));
 }catch(e){setSS('err','Ошибка подключения');console.error(e);}
 </script>
 </body>
