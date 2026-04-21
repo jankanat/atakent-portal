@@ -57,6 +57,7 @@ button,input,select,textarea{font-family:inherit}
 .nav-dot{width:8px;height:8px;border-radius:50%;background:#444;flex-shrink:0}
 .nav-item.active .nav-dot{background:#7b2fff}
 .sync-bar{padding:10px 16px;border-top:1px solid #333;font-size:11px;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.sync-bar .lupd{margin-left:auto;font-size:11px}
 .sync-dot{width:6px;height:6px;border-radius:50%;background:#555}
 .sync-dot.on{background:#22863a}
 .sync-dot.saving{background:#f59e0b;animation:pulse 1s infinite}
@@ -1145,7 +1146,7 @@ body.dark .qr-caption{color:#94a3b8}
     <div class="nav-section">Инструменты</div>
     <div class="nav-item" onclick="goTo('qr',this)" id="nav-qr"><div class="nav-dot"></div>Генератор QR</div>
   </nav>
-<div class="sync-bar"><div class="sync-dot" id="sdot"></div><span id="stxt" style="color:#666">Подключение...</span></div>
+<div class="sync-bar"><div class="sync-dot" id="sdot"></div><span id="stxt" style="color:#666">Подключение...</span><span class="lupd" id="lupd"></span></div>
 </div>
 
 <div class="main">
@@ -1169,7 +1170,7 @@ body.dark .qr-caption{color:#94a3b8}
           <path d="M6 3h12a1 1 0 0 1 1 1v16l-2-1.5L15 20l-3-1.5L9 20l-2-1.5L5 20V4a1 1 0 0 1 1-1z"></path>
         </svg>
       </button>
-      <span class="lupd" id="lupd"></span>
+      <span class="lupd" id="now-dt"></span>
     </div>
   </div>
   <div class="content">
@@ -1751,6 +1752,24 @@ function fmtTimeAlmaty(dateObj=new Date()){
 }
 function fmtDateTimeAlmaty(dateObj){
   return new Intl.DateTimeFormat('ru-RU',{timeZone:APP_TIMEZONE,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(dateObj);
+}
+function updateTopbarDateTime(){
+  const el=document.getElementById('now-dt');
+  if(!el)return;
+  el.textContent=fmtDateTimeAlmaty(new Date());
+}
+let topbarClockTimeout=null;
+let topbarClockInterval=null;
+function startTopbarClock(){
+  updateTopbarDateTime();
+  if(topbarClockTimeout)clearTimeout(topbarClockTimeout);
+  if(topbarClockInterval)clearInterval(topbarClockInterval);
+  const now=new Date();
+  const delay=(60-now.getSeconds())*1000-now.getMilliseconds();
+  topbarClockTimeout=setTimeout(()=>{
+    updateTopbarDateTime();
+    topbarClockInterval=setInterval(updateTopbarDateTime,60000);
+  },Math.max(0,delay));
 }
 
 function normalizeSchedPeople(list){
@@ -3620,6 +3639,7 @@ try{
   setupAdminResetAccess();
   await Promise.all([initInv('tmc'),initInv('spec'),initTSD(),initLoss(),initSched(),initSupply()]);
   setSS('on','Синхронизировано');
+  startTopbarClock();
   document.getElementById('lupd').textContent='Обновлено: '+fmtTimeAlmaty(new Date());
   const savedPageRaw=localStorage.getItem(ACTIVE_PAGE_KEY)||'dash';
   const savedPage=TITLES[savedPageRaw]?savedPageRaw:'dash';
