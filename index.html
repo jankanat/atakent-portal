@@ -2233,16 +2233,35 @@ function setupAdminResetAccess(){
   });
 }
 
+let pendingSaveOps=0;
+let saveStatusTimer=null;
+function scheduleSavingStatus(){
+  if(saveStatusTimer)return;
+  saveStatusTimer=setTimeout(()=>{
+    if(pendingSaveOps>0)setSS('saving','Сохранение...');
+  },280);
+}
+function clearSavingStatusTimer(){
+  if(!saveStatusTimer)return;
+  clearTimeout(saveStatusTimer);
+  saveStatusTimer=null;
+}
 async function saveDoc(ref,data){
+  pendingSaveOps++;
+  scheduleSavingStatus();
   try{
-    setSS('saving','Сохранение...');
     await setDoc(ref,data);
-    setSS('on','Синхронизировано');
     document.getElementById('lupd').textContent='Обновлено: '+fmtTimeAlmaty(new Date());
   }catch(e){
     setSS('err','Ошибка сохранения');
     notify('Не удалось сохранить изменения. Проверьте подключение.', 'err');
     throw e;
+  }finally{
+    pendingSaveOps=Math.max(0,pendingSaveOps-1);
+    if(pendingSaveOps===0){
+      clearSavingStatusTimer();
+      setSS('on','Синхронизировано');
+    }
   }
 }
 function initZoneSelects(){
@@ -3711,7 +3730,49 @@ window.exportSchedXLSX=()=>{
 // NAV
 const TITLES={dash:'Главная',tmc:'Остаток ТМЦ',spec:'Остаток спецодежды',supply:'Трекер заказов',tsd:'ТСД / Оборудование',loss:'Потери потоков',sched:'График',qr:'Генератор QR'};
 const ACTIVE_PAGE_KEY='atakent_active_page';
+const moduleInitTasks={
+  tmc:()=>initInv('tmc'),
+  spec:()=>initInv('spec'),
+  tsd:()=>initTSD(),
+  loss:()=>initLoss(),
+  sched:()=>initSched(),
+  supply:()=>initSupply()
+};
+const moduleInitPromises={};
+function ensureModuleInit(key){
+  if(!moduleInitTasks[key])return Promise.resolve();
+  if(!moduleInitPromises[key]){
+    moduleInitPromises[key]=moduleInitTasks[key]();
+  }
+  return moduleInitPromises[key];
+}
+function getPageInitKeys(page){
+  if(page==='tmc')return['tmc'];
+  if(page==='spec')return['spec'];
+  if(page==='supply')return['supply'];
+  if(page==='tsd')return['tsd'];
+  if(page==='loss')return['loss'];
+  if(page==='sched')return['sched'];
+  if(page==='dash')return['tmc','spec','supply','loss','sched'];
+  return[];
+}
+function ensurePageModules(page){
+  getPageInitKeys(page).forEach(k=>{ensureModuleInit(k).catch(console.error);});
+}
+function initModulesWithPriority(page){
+  const first=getPageInitKeys(page);
+  const allKeys=Object.keys(moduleInitTasks);
+  const rest=allKeys.filter(k=>!first.includes(k));
+  first.forEach(k=>{ensureModuleInit(k).catch(console.error);});
+  setTimeout(()=>{
+    rest.forEach((k,idx)=>{
+      setTimeout(()=>{ensureModuleInit(k).catch(console.error);},idx*140);
+    });
+  },120);
+  return Promise.all(allKeys.map(k=>ensureModuleInit(k)));
+}
 window.goTo=(page,el)=>{
+  ensurePageModules(page);
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   if(el)el.classList.add('active');
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -3832,13 +3893,14 @@ try{
   setupZeroClearInputs();
   initZoneSelects();
   setupAdminResetAccess();
-  await Promise.all([initInv('tmc'),initInv('spec'),initTSD(),initLoss(),initSched(),initSupply()]);
-  setSS('on','Синхронизировано');
   startTopbarClock();
   document.getElementById('lupd').textContent='Обновлено: '+fmtTimeAlmaty(new Date());
   const savedPageRaw=localStorage.getItem(ACTIVE_PAGE_KEY)||'dash';
   const savedPage=TITLES[savedPageRaw]?savedPageRaw:'dash';
   goTo(savedPage, document.querySelector(`#nav-${savedPage}`) || document.querySelector('#nav-dash'));
+  initModulesWithPriority(savedPage)
+    .then(()=>setSS('on','Синхронизировано'))
+    .catch(e=>{setSS('err','Ошибка подключения');console.error(e);});
 }catch(e){setSS('err','Ошибка подключения');console.error(e);}
 </script>
 </body>
