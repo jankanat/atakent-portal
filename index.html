@@ -65,6 +65,7 @@ button,input,select,textarea{font-family:inherit}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
 .main{margin-left:220px;min-height:100vh}
 .topbar{background:#fff;border-bottom:1px solid #e5e5e5;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;position:relative}
+.mobile-menu-btn{display:none}
 .topbar h2{font-size:16px;font-weight:600}
 .content{padding:24px 28px}
 .stats{display:grid;gap:12px;margin-bottom:20px}
@@ -101,6 +102,18 @@ select{padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;font-size:13p
 .btn.g{background:#22863a;color:#fff;border-color:#22863a}
 .tag{font-size:12px;background:#f0eeff;color:#7b2fff;padding:4px 10px;border-radius:20px}
 .tw{background:#fff;border-radius:12px;border:1px solid #e5e5e5;overflow:hidden}
+.mobile-cards{display:none}
+.mcard{
+  background:rgba(255,255,255,.72);
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:10px;
+  margin-bottom:8px;
+}
+.mcard-title{font-size:13px;font-weight:700;margin-bottom:8px}
+.mcard-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mkv{font-size:12px}
+.mkv b{display:block;color:#94a3b8;font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.3px;margin-bottom:2px}
 table{width:100%;border-collapse:collapse;font-size:13px}
 thead{background:#fafafa;position:static;top:auto;z-index:auto}
 th{font-weight:600;font-size:11px;color:#666;text-align:left;padding:10px 12px;border-bottom:1px solid #e5e5e5;white-space:nowrap}
@@ -207,6 +220,13 @@ tr:hover td{background:#fafafa}
 .toast.ok{border-color:#86efac;background:#f0fdf4;color:#166534}
 .toast.err{border-color:#fecaca;background:#fef2f2;color:#991b1b}
 .toast.info{border-color:#c7d2fe;background:#eef2ff;color:#3730a3}
+.mobile-nav-backdrop{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(2,6,23,.6);
+  z-index:90;
+}
 
 /* ===== V2 visual redesign ===== */
 body{
@@ -811,6 +831,13 @@ body.dark .uzone:hover{
 body.dark .uzone h3{color:#e2e8f0}
 body.dark .uzone p{color:#8ea2c8}
 body.dark .cbox h3{color:#9fb1d3}
+body.dark .mcard{
+  background:rgba(15,23,42,.74);
+  border-color:rgba(99,115,148,.26);
+}
+body.dark .mcard-title{color:#e2e8f0}
+body.dark .mkv{color:#cbd5e1}
+body.dark .mkv b{color:#8ea2c8}
 body.dark .uzone.dragover{
   border-color:#a78bfa!important;
   box-shadow:0 0 0 3px rgba(139,92,246,.22);
@@ -1119,10 +1146,47 @@ body.dark .qr-caption{color:#94a3b8}
     width:100%;
   }
 }
+@media(max-width:768px){
+  .mobile-menu-btn{
+    display:inline-flex;
+    width:32px;height:32px;
+    border-radius:8px;
+    align-items:center;justify-content:center;
+    border:1px solid #334155;
+    background:linear-gradient(180deg,#111827,#0b1220);
+    color:#dbe7ff;
+    cursor:pointer;
+    font-size:18px;
+    line-height:1;
+  }
+  .sidebar{
+    position:fixed;
+    top:0;
+    height:100vh;
+    left:-240px;
+    width:240px;
+    transition:left .2s ease;
+    z-index:100;
+  }
+  body.mobile-nav-open .sidebar{left:0}
+  body.mobile-nav-open{overflow:hidden}
+  .mobile-nav-backdrop{display:block}
+  body:not(.mobile-nav-open) .mobile-nav-backdrop{display:none}
+  .main{margin-left:0}
+  .topbar{padding:10px 12px}
+  .content{padding:10px 12px}
+  .controls{padding:8px}
+  #page-supply .tw,#page-tmc .tw,#page-spec .tw{display:none}
+  #page-supply .mobile-cards,#page-tmc .mobile-cards,#page-spec .mobile-cards{display:block}
+  .stats.s4,.stats.s5{grid-template-columns:repeat(2,1fr)}
+  .stats.s3{grid-template-columns:repeat(3,1fr)}
+  .btn{min-height:36px}
+}
 </style>
 </head>
 <body>
 
+<div class="mobile-nav-backdrop" id="mobile-nav-backdrop" onclick="closeMobileNav()"></div>
 <div class="sidebar">
   <div class="sidebar-logo" id="brand-home" onclick="goTo('dash',document.getElementById('nav-dash'))" style="cursor:pointer"><h1>СЦ Алматы Атакент</h1><p>ID: 218987</p></div>
   <div class="sidebar-theme">
@@ -1153,6 +1217,7 @@ body.dark .qr-caption{color:#94a3b8}
   <div class="topbar">
     <div class="topbar-copy">
       <div class="topbar-title-row">
+        <button class="mobile-menu-btn" onclick="toggleMobileNav()" aria-label="Меню">☰</button>
         <h2 id="ptitle">Главная</h2>
         <div class="htab topbar-loss-switch hidden" id="topbar-loss-switch">
           <button class="htab-btn act" id="loss-tab-in" onclick="setLossTab('in')">Входящий поток</button>
@@ -1228,6 +1293,7 @@ body.dark .qr-caption{color:#94a3b8}
     <thead><tr><th style="width:56%">Наименование</th><th style="width:12%">Остаток</th><th style="width:12%">Статус</th><th style="width:10%">Пороги</th><th style="width:10%">История</th></tr></thead>
     <tbody id="tmc-body"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody>
   </table></div>
+  <div class="mobile-cards" id="tmc-cards"></div>
 </div>
 
 <!-- SPEC -->
@@ -1251,6 +1317,7 @@ body.dark .qr-caption{color:#94a3b8}
     <thead><tr><th style="width:56%">Наименование</th><th style="width:12%">Остаток</th><th style="width:12%">Статус</th><th style="width:10%">Пороги</th><th style="width:10%">История</th></tr></thead>
     <tbody id="spec-body"><tr><td colspan="5" class="empty">Загрузка...</td></tr></tbody>
   </table></div>
+  <div class="mobile-cards" id="spec-cards"></div>
 </div>
 
 <!-- SUPPLY -->
@@ -1297,6 +1364,7 @@ body.dark .qr-caption{color:#94a3b8}
       <thead><tr><th style="width:30%">Наименование</th><th style="width:8%">Ед.</th><th style="width:8%">Заказ</th><th style="width:11%">Приехало</th><th style="width:10%">Перенесено</th><th style="width:10%">К переносу</th><th style="width:10%">Статус</th><th style="width:13%">Действие</th></tr></thead>
       <tbody id="sup-body"></tbody>
     </table></div>
+    <div class="mobile-cards" id="sup-cards"></div>
   </div>
 </div>
 
@@ -2167,7 +2235,7 @@ window.renderInv=(type)=>{
     const st=getSt(calcQ(d),thr.amber,thr.red);
     return n.toLowerCase().includes(q)&&(f==='all'||st===f);
   });
-  document.getElementById(type+'-body').innerHTML=filtered.map(n=>{
+  const rowsHtml=filtered.map(n=>{
     const d=data[n]||{invent:0,expense:0,arrival:0};
     const thr=getItemThreshold(type,d);
     const qty=calcQ(d);const st=getSt(qty,thr.amber,thr.red);
@@ -2175,7 +2243,20 @@ window.renderInv=(type)=>{
     const badge=st==='crit'?'<span class="bx br">Критично</span>':st==='low'?'<span class="bx ba">Мало</span>':'<span class="bx bg">Норма</span>';
     const logCount=(d.log||[]).length;
     return`<tr><td>${n}</td><td><span class="${qcls}">${qty}</span></td><td>${badge}</td><td><button class="btn sm" onclick="openInvThresholdModal('${type}','${n.replace(/'/g,"\\'")}')">${thr.red}/${thr.amber}</button></td><td><button class="btn sm" onclick="showHist('${type}','${n.replace(/'/g,"\\'")}')">📋 ${logCount}</button></td></tr>`;
-  }).join('')||'<tr><td colspan="5" class="empty">Ничего не найдено</td></tr>';
+  }).join('');
+  document.getElementById(type+'-body').innerHTML=rowsHtml||'<tr><td colspan="5" class="empty">Ничего не найдено</td></tr>';
+  const cardsEl=document.getElementById(type+'-cards');
+  if(cardsEl){
+    cardsEl.innerHTML=filtered.map(n=>{
+      const d=data[n]||{invent:0,expense:0,arrival:0};
+      const thr=getItemThreshold(type,d);
+      const qty=calcQ(d);
+      const st=getSt(qty,thr.amber,thr.red);
+      const badgeText=st==='crit'?'Критично':st==='low'?'Мало':'Норма';
+      const safeName=n.replace(/'/g,"\\'");
+      return `<div class="mcard"><div class="mcard-title">${n}</div><div class="mcard-grid"><div class="mkv"><b>Остаток</b><span>${qty}</span></div><div class="mkv"><b>Статус</b><span>${badgeText}</span></div><div class="mkv"><b>Пороги</b><button class="btn sm" onclick="openInvThresholdModal('${type}','${safeName}')">${thr.red}/${thr.amber}</button></div><div class="mkv"><b>История</b><button class="btn sm" onclick="showHist('${type}','${safeName}')">📋 ${(d.log||[]).length}</button></div></div></div>`;
+    }).join('')||'<div class="empty">Ничего не найдено</div>';
+  }
 };
 
 window.openInvThresholdModal=(type,name)=>{
@@ -2473,7 +2554,7 @@ window.renderSup=()=>{
     return;
   }
   const fil=supItems.filter(it=>it.name.toLowerCase().includes(q)&&(f==='all'||it.status===f));
-  document.getElementById('sup-body').innerHTML=fil.map(it=>{
+  const rowsHtml=fil.map(it=>{
     const idx=supItems.indexOf(it);
     const posted=parseInt(it.postedToInv)||0;
     const pendingToPost=calcSupPendingToPost(it);
@@ -2485,7 +2566,21 @@ window.renderSup=()=>{
         ? `<span class="bx bgy sup-state">Учтено</span>`
         : `<span class="bx bgy sup-state">Нет прихода</span>`);
     return`<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.qty}</td><td><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></td><td>${posted}</td><td>${pendingToPost}</td><td>${badge}</td><td><div class="sup-actions">${actionBtn}<input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></td></tr>`;
-  }).join('')||'<tr><td colspan="8" class="empty">Ничего не найдено</td></tr>';
+  }).join('');
+  document.getElementById('sup-body').innerHTML=rowsHtml||'<tr><td colspan="8" class="empty">Ничего не найдено</td></tr>';
+  const supCards=document.getElementById('sup-cards');
+  if(supCards){
+    supCards.innerHTML=fil.map(it=>{
+      const idx=supItems.indexOf(it);
+      const posted=parseInt(it.postedToInv)||0;
+      const pendingToPost=calcSupPendingToPost(it);
+      const statusText=it.status==='arrived'?'Приехало':it.status==='partial'?'Частично':'Ожидает';
+      const actionBtn=pendingToPost>0
+        ? `<button class="btn sup-post-btn" onclick="postSupToInv(${idx})">↗ В ТМЦ</button>`
+        : ((parseInt(it.arrived)||0)>0?`<span class="bx bgy sup-state">Учтено</span>`:`<span class="bx bgy sup-state">Нет прихода</span>`);
+      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Приехало</b><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Действие</b>${actionBtn}</div><div class="mkv"><b>Заметка</b><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div></div>`;
+    }).join('')||'<div class="empty">Ничего не найдено</div>';
+  }
   const tot=supItems.length,done=supItems.filter(i=>i.status==='arrived').length,wait=supItems.filter(i=>i.status==='waiting').length;
   document.getElementById('sup-total').textContent=tot;
   document.getElementById('sup-done').textContent=done;
@@ -2511,6 +2606,14 @@ async function renderSupArrivedView(q){
     const pendingToPost=Math.max(0,(parseInt(it.arrived)||0)-posted);
     return`<tr><td>${it.name}${it.date?` <span class="bx bgy" style="margin-left:6px">${it.date}</span>`:''}</td><td>${it.unit}</td><td>${it.qty}</td><td>${it.arrived}</td><td>${posted}</td><td>${pendingToPost}</td><td><span class="bx bg">Приехало</span></td><td><span class="bx bgy">Архив</span></td></tr>`;
   }).join('')||'<tr><td colspan="8" class="empty">Нет прибывших позиций</td></tr>';
+  const supCards=document.getElementById('sup-cards');
+  if(supCards){
+    supCards.innerHTML=fil.map(it=>{
+      const posted=parseInt(it.postedToInv)||0;
+      const pendingToPost=Math.max(0,(parseInt(it.arrived)||0)-posted);
+      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-grid"><div class="mkv"><b>Источник</b><span>${it.date||'Текущий'}</span></div><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Приехало</b><span>${it.arrived}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div></div></div>`;
+    }).join('')||'<div class="empty">Нет прибывших позиций</div>';
+  }
   document.getElementById('sup-tag').textContent=fil.length+' прибывших';
 }
 
@@ -2526,6 +2629,13 @@ window.setSupView=(view)=>{
   if(importBtn)importBtn.disabled=isArrived;
   if(addBtn)addBtn.disabled=isArrived;
   renderSup();
+};
+
+window.toggleMobileNav=()=>{
+  document.body.classList.toggle('mobile-nav-open');
+};
+window.closeMobileNav=()=>{
+  document.body.classList.remove('mobile-nav-open');
 };
 
 let supTimer=null;
@@ -3536,6 +3646,7 @@ window.goTo=(page,el)=>{
   if(page==='tsd')renderTSD();
   if(page==='loss')renderLoss(lossTab);
   if(page==='sched')renderSched();
+  if(typeof closeMobileNav==='function')closeMobileNav();
 };
 
 window.closeM=(id)=>document.getElementById(id).classList.add('hidden');
