@@ -95,6 +95,8 @@ select{padding:8px 10px;border:1px solid #d0d0d0;border-radius:8px;font-size:13p
   transition:transform .14s ease, box-shadow .14s ease, background .14s ease;
 }
 .btn.sm{min-height:26px;padding:3px 10px;font-size:12px;border-radius:8px}
+.admin-pos-btn{display:none}
+body.admin-tools-unlocked .admin-pos-btn{display:inline-flex}
 .btn:hover{background:#f5f5f5;transform:translateY(-1px)}
 .btn.p{background:#7b2fff;color:#fff;border-color:#7b2fff}
 .btn.p:hover{background:#6a20ee}
@@ -1874,6 +1876,7 @@ const ADMIN_RESET_PASSWORD='218987';
 let adminUnlockClicks=0;
 let adminUnlockTimer=null;
 let adminPositionEditUnlocked=false;
+let adminToolsUnlocked=false;
 function readAuditLog(){
   try{return JSON.parse(localStorage.getItem(AUDIT_LOG_KEY)||'[]')||[];}catch{return [];}
 }
@@ -2232,14 +2235,18 @@ function setupZeroClearInputs(){
 }
 function setupAdminResetAccess(){
   const syncBar=document.querySelector('.sync-bar');
-  const buttons=[...document.querySelectorAll('.admin-reset-btn')];
-  if(!syncBar||!buttons.length)return;
+  const resetButtons=[...document.querySelectorAll('.admin-reset-btn')];
+  const posButtons=[...document.querySelectorAll('.admin-pos-btn')];
+  const allAdminButtons=[...resetButtons,...posButtons];
+  if(!syncBar||!allAdminButtons.length)return;
   syncBar.addEventListener('click',()=>{
     adminUnlockClicks++;
     if(adminUnlockTimer)clearTimeout(adminUnlockTimer);
     adminUnlockTimer=setTimeout(()=>{adminUnlockClicks=0;},2500);
     if(adminUnlockClicks>=5){
-      buttons.forEach(btn=>{btn.style.display='';});
+      allAdminButtons.forEach(btn=>{btn.style.display='';});
+      adminToolsUnlocked=true;
+      document.body.classList.add('admin-tools-unlocked');
       adminUnlockClicks=0;
       notify('Админ-кнопки разблокированы на эту сессию.', 'info');
     }
@@ -2359,7 +2366,7 @@ window.renderInv=(type)=>{
     const badge=st==='crit'?'<span class="bx br">Критично</span>':st==='low'?'<span class="bx ba">Мало</span>':'<span class="bx bg">Норма</span>';
     const logCount=(d.log||[]).length;
     const escName=n.replace(/'/g,"\\'");
-    const adminBtns=`<button class="btn sm" onclick="adminEditInvItem('${type}','${escName}')">✏</button> <button class="btn sm d" onclick="adminDeleteInvItem('${type}','${escName}')">🗑</button>`;
+    const adminBtns=`<button class="btn sm admin-pos-btn" onclick="adminEditInvItem('${type}','${escName}')">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteInvItem('${type}','${escName}')">🗑</button>`;
     return`<tr><td>${n}</td><td><span class="${qcls}">${qty}</span></td><td>${badge}</td><td><button class="btn sm" onclick="openInvThresholdModal('${type}','${escName}')">${thr.red}/${thr.amber}</button></td><td><button class="btn sm" onclick="showHist('${type}','${escName}')">📋 ${logCount}</button> ${adminBtns}</td></tr>`;
   }).join('');
   document.getElementById(type+'-body').innerHTML=rowsHtml||'<tr><td colspan="5" class="empty">Ничего не найдено</td></tr>';
@@ -2372,7 +2379,7 @@ window.renderInv=(type)=>{
       const st=getSt(qty,thr.amber,thr.red);
       const badgeText=st==='crit'?'Критично':st==='low'?'Мало':'Норма';
       const safeName=n.replace(/'/g,"\\'");
-      return `<div class="mcard"><div class="mcard-title">${n}</div><div class="mcard-grid"><div class="mkv"><b>Остаток</b><span>${qty}</span></div><div class="mkv"><b>Статус</b><span>${badgeText}</span></div><div class="mkv"><b>Пороги</b><button class="btn sm" onclick="openInvThresholdModal('${type}','${safeName}')">${thr.red}/${thr.amber}</button></div><div class="mkv"><b>История</b><button class="btn sm" onclick="showHist('${type}','${safeName}')">📋 ${(d.log||[]).length}</button></div><div class="mkv"><b>Админ</b><button class="btn sm" onclick="adminEditInvItem('${type}','${safeName}')">✏</button> <button class="btn sm d" onclick="adminDeleteInvItem('${type}','${safeName}')">🗑</button></div></div></div>`;
+      return `<div class="mcard"><div class="mcard-title">${n}</div><div class="mcard-grid"><div class="mkv"><b>Остаток</b><span>${qty}</span></div><div class="mkv"><b>Статус</b><span>${badgeText}</span></div><div class="mkv"><b>Пороги</b><button class="btn sm" onclick="openInvThresholdModal('${type}','${safeName}')">${thr.red}/${thr.amber}</button></div><div class="mkv"><b>История</b><button class="btn sm" onclick="showHist('${type}','${safeName}')">📋 ${(d.log||[]).length}</button></div><div class="mkv"><b>Админ</b><button class="btn sm admin-pos-btn" onclick="adminEditInvItem('${type}','${safeName}')">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteInvItem('${type}','${safeName}')">🗑</button></div></div></div>`;
     }).join('')||'<div class="empty">Ничего не найдено</div>';
   }
 };
@@ -2717,7 +2724,7 @@ window.renderSup=()=>{
       : (arrivedQty>0
         ? `<span class="bx bgy sup-state">Учтено</span>`
         : `<span class="bx bgy sup-state">Нет прихода</span>`);
-    const adminBtns=`<button class="btn sm" onclick="adminEditSupItem(${idx})">✏</button> <button class="btn sm d" onclick="adminDeleteSupItem(${idx})">🗑</button>`;
+    const adminBtns=`<button class="btn sm admin-pos-btn" onclick="adminEditSupItem(${idx})">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteSupItem(${idx})">🗑</button>`;
     return`<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.qty}</td><td><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></td><td>${posted}</td><td>${pendingToPost}</td><td>${badge}</td><td><div class="sup-actions">${actionBtn}${adminBtns}<input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></td></tr>`;
   }).join('');
   document.getElementById('sup-body').innerHTML=rowsHtml||'<tr><td colspan="8" class="empty">Ничего не найдено</td></tr>';
@@ -2731,7 +2738,7 @@ window.renderSup=()=>{
       const actionBtn=pendingToPost>0
         ? `<button class="btn sup-post-btn thumb" onclick="postSupToInv(${idx})">↗ В ТМЦ</button>`
         : ((parseInt(it.arrived)||0)>0?`<span class="bx bgy sup-state">Учтено</span>`:`<span class="bx bgy sup-state">Нет прихода</span>`);
-      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-top"><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)" title="Приехало"><div style="flex:1">${actionBtn}</div></div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div><div class="mkv"><b>Админ</b><button class="btn sm" onclick="adminEditSupItem(${idx})">✏</button> <button class="btn sm d" onclick="adminDeleteSupItem(${idx})">🗑</button></div></div><div class="mcard-note"><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div>`;
+      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-top"><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)" title="Приехало"><div style="flex:1">${actionBtn}</div></div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div><div class="mkv"><b>Админ</b><button class="btn sm admin-pos-btn" onclick="adminEditSupItem(${idx})">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteSupItem(${idx})">🗑</button></div></div><div class="mcard-note"><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div>`;
     }).join('')||'<div class="empty">Ничего не найдено</div>';
   }
   const tot=supItems.length,done=supItems.filter(i=>i.status==='arrived').length,wait=supItems.filter(i=>i.status==='waiting').length;
@@ -3196,12 +3203,12 @@ function getSNActionButtons(zone,sn,status){
   const escZone=zone.replace(/'/g,"\\'");
   const escSn=(sn||'').replace(/'/g,"\\'");
   if(status==='work'){
-    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','bad')">В брак</button> <button class="btn sm" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
+    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','bad')">В брак</button> <button class="btn sm admin-pos-btn" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
   }
   if(status==='bad'){
-    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','repair')">В ремонт</button> <button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">В работу</button> <button class="btn sm" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
+    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','repair')">В ремонт</button> <button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">В работу</button> <button class="btn sm admin-pos-btn" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
   }
-  return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">Вернуть в работу</button> <button class="btn sm" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
+  return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">Вернуть в работу</button> <button class="btn sm admin-pos-btn" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
 }
 
 window.renderTSD=()=>{
@@ -3658,7 +3665,7 @@ window.renderLoss=(tab)=>{
       const idx=items.indexOf(it);
       const isNew=!it.status||it.status==='new';
       const rowStyle=isNew?'background:var(--color-background-warning);cursor:pointer':'cursor:pointer';
-      const adminBtns=`<button class="btn sm" onclick="event.stopPropagation();adminEditLossItem('in',${idx})">✏</button> <button class="btn sm d" onclick="event.stopPropagation();adminDeleteLossItem('in',${idx})">🗑</button>`;
+      const adminBtns=`<button class="btn sm admin-pos-btn" onclick="event.stopPropagation();adminEditLossItem('in',${idx})">✏</button> <button class="btn sm d admin-pos-btn" onclick="event.stopPropagation();adminDeleteLossItem('in',${idx})">🗑</button>`;
       return`<tr style="${rowStyle}" onclick="openLossWork('in',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${it.guilty||''}</td><td style="font-size:11px">${it.user_comment||it.comment||''} ${adminBtns}</td></tr>`;
     }).join('')||'<tr><td colspan="7" class="empty">Нет записей</td></tr>';
   } else {
@@ -3683,7 +3690,7 @@ window.renderLoss=(tab)=>{
       const idx=items.indexOf(it);
       const isNew=!it.status||it.status==='new';
       const rowStyle=isNew?'background:var(--color-background-warning);cursor:pointer':'cursor:pointer';
-      const adminBtns=`<button class="btn sm" onclick="event.stopPropagation();adminEditLossItem('out',${idx})">✏</button> <button class="btn sm d" onclick="event.stopPropagation();adminDeleteLossItem('out',${idx})">🗑</button>`;
+      const adminBtns=`<button class="btn sm admin-pos-btn" onclick="event.stopPropagation();adminEditLossItem('out',${idx})">✏</button> <button class="btn sm d admin-pos-btn" onclick="event.stopPropagation();adminDeleteLossItem('out',${idx})">🗑</button>`;
       return`<tr style="${rowStyle}" onclick="openLossWork('out',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${it.op||''}</td><td>${it.sum||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td style="font-size:11px">${it.user_comment||''} ${adminBtns}</td></tr>`;
     }).join('')||'<tr><td colspan="8" class="empty">Нет записей</td></tr>';
   }
@@ -3826,7 +3833,7 @@ window.renderSched=()=>{
     rows+=`<tr class="sched-zone-row"><td colspan="8">${z}</td></tr>`;
     byZ[z].forEach(p=>{
       const escName=p.name.replace(/'/g,"\\'");
-      rows+=`<tr><td class="sched-person"><div class="sched-person-name">${p.name}</div><div class="sched-person-tg">${p.tg}</div><div style="margin-top:6px"><button class="btn sm" onclick="adminEditSchedPerson('${escName}')">✏</button> <button class="btn sm d" onclick="adminDeleteSchedPerson('${escName}')">🗑</button></div></td>`;
+      rows+=`<tr><td class="sched-person"><div class="sched-person-name">${p.name}</div><div class="sched-person-tg">${p.tg}</div><div style="margin-top:6px"><button class="btn sm admin-pos-btn" onclick="adminEditSchedPerson('${escName}')">✏</button> <button class="btn sm d admin-pos-btn" onclick="adminDeleteSchedPerson('${escName}')">🗑</button></div></td>`;
       dates.forEach(d=>{
         const ds=fd(d),sh=(shifts[p.name]||{})[ds]||'';
         const isTodayCol=ds===today;
