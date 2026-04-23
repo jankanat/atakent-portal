@@ -1873,6 +1873,7 @@ const SCHED_BASE_PEOPLE=[...PEOPLE,...ANALYSTS];
 const ADMIN_RESET_PASSWORD='218987';
 let adminUnlockClicks=0;
 let adminUnlockTimer=null;
+let adminPositionEditUnlocked=false;
 function readAuditLog(){
   try{return JSON.parse(localStorage.getItem(AUDIT_LOG_KEY)||'[]')||[];}catch{return [];}
 }
@@ -2039,6 +2040,18 @@ async function adminResetOperationalData(){
     notify('Неверный пароль.', 'err');
     return;
   }
+  return true;
+}
+async function requireAdminPositionAccess(){
+  if(adminPositionEditUnlocked)return true;
+  const pwd=prompt('Введите пароль администратора для правки позиции:');
+  if(pwd===null)return false;
+  if(String(pwd).trim()!==ADMIN_RESET_PASSWORD){
+    notify('Неверный пароль.', 'err');
+    return false;
+  }
+  adminPositionEditUnlocked=true;
+  notify('Админ-доступ к правке позиций открыт на сессию.', 'ok');
   return true;
 }
 async function adminResetModule(moduleKey){
@@ -2345,7 +2358,9 @@ window.renderInv=(type)=>{
     const qcls=st==='crit'?'qr':st==='low'?'qa':'qg';
     const badge=st==='crit'?'<span class="bx br">Критично</span>':st==='low'?'<span class="bx ba">Мало</span>':'<span class="bx bg">Норма</span>';
     const logCount=(d.log||[]).length;
-    return`<tr><td>${n}</td><td><span class="${qcls}">${qty}</span></td><td>${badge}</td><td><button class="btn sm" onclick="openInvThresholdModal('${type}','${n.replace(/'/g,"\\'")}')">${thr.red}/${thr.amber}</button></td><td><button class="btn sm" onclick="showHist('${type}','${n.replace(/'/g,"\\'")}')">📋 ${logCount}</button></td></tr>`;
+    const escName=n.replace(/'/g,"\\'");
+    const adminBtns=`<button class="btn sm" onclick="adminEditInvItem('${type}','${escName}')">✏</button> <button class="btn sm d" onclick="adminDeleteInvItem('${type}','${escName}')">🗑</button>`;
+    return`<tr><td>${n}</td><td><span class="${qcls}">${qty}</span></td><td>${badge}</td><td><button class="btn sm" onclick="openInvThresholdModal('${type}','${escName}')">${thr.red}/${thr.amber}</button></td><td><button class="btn sm" onclick="showHist('${type}','${escName}')">📋 ${logCount}</button> ${adminBtns}</td></tr>`;
   }).join('');
   document.getElementById(type+'-body').innerHTML=rowsHtml||'<tr><td colspan="5" class="empty">Ничего не найдено</td></tr>';
   const cardsEl=document.getElementById(type+'-cards');
@@ -2357,9 +2372,43 @@ window.renderInv=(type)=>{
       const st=getSt(qty,thr.amber,thr.red);
       const badgeText=st==='crit'?'Критично':st==='low'?'Мало':'Норма';
       const safeName=n.replace(/'/g,"\\'");
-      return `<div class="mcard"><div class="mcard-title">${n}</div><div class="mcard-grid"><div class="mkv"><b>Остаток</b><span>${qty}</span></div><div class="mkv"><b>Статус</b><span>${badgeText}</span></div><div class="mkv"><b>Пороги</b><button class="btn sm" onclick="openInvThresholdModal('${type}','${safeName}')">${thr.red}/${thr.amber}</button></div><div class="mkv"><b>История</b><button class="btn sm" onclick="showHist('${type}','${safeName}')">📋 ${(d.log||[]).length}</button></div></div></div>`;
+      return `<div class="mcard"><div class="mcard-title">${n}</div><div class="mcard-grid"><div class="mkv"><b>Остаток</b><span>${qty}</span></div><div class="mkv"><b>Статус</b><span>${badgeText}</span></div><div class="mkv"><b>Пороги</b><button class="btn sm" onclick="openInvThresholdModal('${type}','${safeName}')">${thr.red}/${thr.amber}</button></div><div class="mkv"><b>История</b><button class="btn sm" onclick="showHist('${type}','${safeName}')">📋 ${(d.log||[]).length}</button></div><div class="mkv"><b>Админ</b><button class="btn sm" onclick="adminEditInvItem('${type}','${safeName}')">✏</button> <button class="btn sm d" onclick="adminDeleteInvItem('${type}','${safeName}')">🗑</button></div></div></div>`;
     }).join('')||'<div class="empty">Ничего не найдено</div>';
   }
+};
+window.adminEditInvItem=async(type,name)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const ref=doc(db,'inventory',type);
+  const snap=await getDoc(ref);
+  const data=snap.data()||{};
+  if(!data[name]){notify('Позиция не найдена.', 'err');return;}
+  const cur=data[name];
+  const invent=prompt(`Инвент для "${name}"`, String(parseInt(cur.invent)||0));
+  if(invent===null)return;
+  const expense=prompt(`Расход для "${name}"`, String(parseInt(cur.expense)||0));
+  if(expense===null)return;
+  const arrival=prompt(`Приход для "${name}"`, String(parseInt(cur.arrival)||0));
+  if(arrival===null)return;
+  data[name].invent=Math.max(0,parseInt(invent)||0);
+  data[name].expense=Math.max(0,parseInt(expense)||0);
+  data[name].arrival=Math.max(0,parseInt(arrival)||0);
+  if(!Array.isArray(data[name].log))data[name].log=[];
+  data[name].log.push({type:'admin-edit',qty:0,date:tzDateKey(new Date()),note:'Ручная корректировка админом'});
+  await saveDoc(ref,data);
+  addAuditLog(type==='tmc'?'ТМЦ':'Спецодежда','Админ: правка позиции',name);
+  notify('Позиция обновлена.', 'ok');
+};
+window.adminDeleteInvItem=async(type,name)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  if(!confirm(`Удалить (обнулить) позицию "${name}"?`))return;
+  const ref=doc(db,'inventory',type);
+  const snap=await getDoc(ref);
+  const data=snap.data()||{};
+  if(!data[name]){notify('Позиция не найдена.', 'err');return;}
+  data[name]={...(data[name]||{}),invent:0,expense:0,arrival:0,log:[]};
+  await saveDoc(ref,data);
+  addAuditLog(type==='tmc'?'ТМЦ':'Спецодежда','Админ: удаление позиции',name);
+  notify('Позиция удалена (обнулена).', 'ok');
 };
 
 window.openInvThresholdModal=(type,name)=>{
@@ -2668,7 +2717,8 @@ window.renderSup=()=>{
       : (arrivedQty>0
         ? `<span class="bx bgy sup-state">Учтено</span>`
         : `<span class="bx bgy sup-state">Нет прихода</span>`);
-    return`<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.qty}</td><td><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></td><td>${posted}</td><td>${pendingToPost}</td><td>${badge}</td><td><div class="sup-actions">${actionBtn}<input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></td></tr>`;
+    const adminBtns=`<button class="btn sm" onclick="adminEditSupItem(${idx})">✏</button> <button class="btn sm d" onclick="adminDeleteSupItem(${idx})">🗑</button>`;
+    return`<tr><td>${it.name}</td><td>${it.unit}</td><td>${it.qty}</td><td><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)"></td><td>${posted}</td><td>${pendingToPost}</td><td>${badge}</td><td><div class="sup-actions">${actionBtn}${adminBtns}<input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></td></tr>`;
   }).join('');
   document.getElementById('sup-body').innerHTML=rowsHtml||'<tr><td colspan="8" class="empty">Ничего не найдено</td></tr>';
   const supCards=document.getElementById('sup-cards');
@@ -2681,7 +2731,7 @@ window.renderSup=()=>{
       const actionBtn=pendingToPost>0
         ? `<button class="btn sup-post-btn thumb" onclick="postSupToInv(${idx})">↗ В ТМЦ</button>`
         : ((parseInt(it.arrived)||0)>0?`<span class="bx bgy sup-state">Учтено</span>`:`<span class="bx bgy sup-state">Нет прихода</span>`);
-      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-top"><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)" title="Приехало"><div style="flex:1">${actionBtn}</div></div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div></div><div class="mcard-note"><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div>`;
+      return `<div class="mcard"><div class="mcard-title">${it.name}</div><div class="mcard-top"><input class="ni" type="number" min="0" max="${it.qty}" value="${it.arrived}" onchange="updSup(${idx},this.value)" title="Приехало"><div style="flex:1">${actionBtn}</div></div><div class="mcard-grid"><div class="mkv"><b>Ед.</b><span>${it.unit}</span></div><div class="mkv"><b>Заказ</b><span>${it.qty}</span></div><div class="mkv"><b>Статус</b><span>${statusText}</span></div><div class="mkv"><b>К переносу</b><span>${pendingToPost}</span></div><div class="mkv"><b>Перенесено</b><span>${posted}</span></div><div class="mkv"><b>Админ</b><button class="btn sm" onclick="adminEditSupItem(${idx})">✏</button> <button class="btn sm d" onclick="adminDeleteSupItem(${idx})">🗑</button></div></div><div class="mcard-note"><input class="nit" type="text" value="${it.note||''}" placeholder="Заметка..." onchange="updSupNote(${idx},this.value)"></div></div>`;
     }).join('')||'<div class="empty">Ничего не найдено</div>';
   }
   const tot=supItems.length,done=supItems.filter(i=>i.status==='arrived').length,wait=supItems.filter(i=>i.status==='waiting').length;
@@ -2764,6 +2814,35 @@ window.updSup=async(idx,val)=>{
   supTimer=setTimeout(async()=>{const ref=doc(db,'supply','current');await saveDoc(ref,{items:supItems,updatedAt:new Date().toISOString()});},1000);
 };
 window.updSupNote=(idx,val)=>{supItems[idx].note=val;};
+window.adminEditSupItem=async(idx)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const it=supItems[idx];
+  if(!it){notify('Позиция не найдена.', 'err');return;}
+  const qty=prompt(`Заказ для "${it.name}"`, String(parseInt(it.qty)||0));
+  if(qty===null)return;
+  const arrived=prompt(`Приехало для "${it.name}"`, String(parseInt(it.arrived)||0));
+  if(arrived===null)return;
+  const note=prompt(`Заметка для "${it.name}"`, String(it.note||''));
+  if(note===null)return;
+  it.qty=Math.max(0,parseInt(qty)||0);
+  it.arrived=Math.min(Math.max(0,parseInt(arrived)||0),it.qty);
+  it.note=note;
+  it.status=calcSupSt(it);
+  if((parseInt(it.postedToInv)||0)>it.arrived)it.postedToInv=it.arrived;
+  await saveDoc(doc(db,'supply','current'),{items:supItems,updatedAt:new Date().toISOString()});
+  addAuditLog('Поставки','Админ: правка позиции',`${it.name}`);
+  renderSup();
+};
+window.adminDeleteSupItem=async(idx)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const it=supItems[idx];
+  if(!it)return;
+  if(!confirm(`Удалить позицию "${it.name}" из трекера?`))return;
+  supItems.splice(idx,1);
+  await saveDoc(doc(db,'supply','current'),{items:supItems,updatedAt:new Date().toISOString()});
+  addAuditLog('Поставки','Админ: удаление позиции',`${it.name}`);
+  renderSup();
+};
 window.postSupToInv=async(idx)=>{
   const item=supItems[idx];
   if(!item)return;
@@ -3117,12 +3196,12 @@ function getSNActionButtons(zone,sn,status){
   const escZone=zone.replace(/'/g,"\\'");
   const escSn=(sn||'').replace(/'/g,"\\'");
   if(status==='work'){
-    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','bad')">В брак</button>`;
+    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','bad')">В брак</button> <button class="btn sm" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
   }
   if(status==='bad'){
-    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','repair')">В ремонт</button> <button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">В работу</button>`;
+    return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','repair')">В ремонт</button> <button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">В работу</button> <button class="btn sm" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
   }
-  return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">Вернуть в работу</button>`;
+  return `<button class="btn sm" onclick="setSNStatus('${escZone}','${escSn}','work')">Вернуть в работу</button> <button class="btn sm" onclick="adminEditSN('${escZone}','${escSn}')">✏</button> <button class="btn sm d" onclick="adminDeleteSN('${escZone}','${escSn}')">🗑</button>`;
 }
 
 window.renderTSD=()=>{
@@ -3189,6 +3268,51 @@ window.setSNStatus=async(zone,sn,newStatus)=>{
   await saveDoc(ref,data);
   addAuditLog('ТСД / Оборудование','Смена статуса S/N',`${zone} • ${sn} -> ${newStatus}`);
   notify('Статус S/N обновлен.', 'ok');
+};
+window.adminEditSN=async(zone,sn)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const ref=doc(db,'tsd','zones');
+  const snap=await getDoc(ref);
+  const data=snap.data()||{};
+  if(!data[zone])return;
+  const item=(data[zone].sns||[]).find(s=>s.sn===sn);
+  if(!item){notify('S/N не найден.', 'err');return;}
+  const nextSN=prompt('S/N', item.sn||'');
+  if(nextSN===null)return;
+  const nextModel=prompt('Модель', item.model||'');
+  if(nextModel===null)return;
+  const nextStatusRaw=prompt('Статус (work/bad/repair)', item.status||'work');
+  if(nextStatusRaw===null)return;
+  const nextZoneRaw=prompt('Зона', zone);
+  if(nextZoneRaw===null)return;
+  const nextZone=normalizeZoneName(nextZoneRaw);
+  if(!data[nextZone])data[nextZone]={devices:[],sns:[],zoneName:nextZone};
+  item.sn=String(nextSN).trim();
+  item.model=canonicalModelByZone(nextZone,nextModel||item.model);
+  const nextStatus=['work','bad','repair'].includes(String(nextStatusRaw).trim())?String(nextStatusRaw).trim():'work';
+  item.status=nextStatus;
+  if(nextZone!==zone){
+    data[zone].sns=(data[zone].sns||[]).filter(s=>s!==item);
+    data[nextZone].sns=(data[nextZone].sns||[]);
+    data[nextZone].sns.push(item);
+  }
+  if(data[zone]){data[zone].zoneName=zone;recalcZoneDevicesFromSN(data[zone]);}
+  if(data[nextZone]){data[nextZone].zoneName=nextZone;recalcZoneDevicesFromSN(data[nextZone]);}
+  await saveDoc(ref,data);
+  addAuditLog('ТСД / Оборудование','Админ: правка S/N',`${sn} -> ${item.sn}`);
+};
+window.adminDeleteSN=async(zone,sn)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  if(!confirm(`Удалить S/N "${sn}"?`))return;
+  const ref=doc(db,'tsd','zones');
+  const snap=await getDoc(ref);
+  const data=snap.data()||{};
+  if(!data[zone])return;
+  data[zone].sns=(data[zone].sns||[]).filter(s=>s.sn!==sn);
+  data[zone].zoneName=zone;
+  recalcZoneDevicesFromSN(data[zone]);
+  await saveDoc(ref,data);
+  addAuditLog('ТСД / Оборудование','Админ: удаление S/N',sn);
 };
 
 window.openTSDModal=()=>{
@@ -3534,7 +3658,8 @@ window.renderLoss=(tab)=>{
       const idx=items.indexOf(it);
       const isNew=!it.status||it.status==='new';
       const rowStyle=isNew?'background:var(--color-background-warning);cursor:pointer':'cursor:pointer';
-      return`<tr style="${rowStyle}" onclick="openLossWork('in',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${it.guilty||''}</td><td style="font-size:11px">${it.user_comment||it.comment||''}</td></tr>`;
+      const adminBtns=`<button class="btn sm" onclick="event.stopPropagation();adminEditLossItem('in',${idx})">✏</button> <button class="btn sm d" onclick="event.stopPropagation();adminDeleteLossItem('in',${idx})">🗑</button>`;
+      return`<tr style="${rowStyle}" onclick="openLossWork('in',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${it.guilty||''}</td><td style="font-size:11px">${it.user_comment||it.comment||''} ${adminBtns}</td></tr>`;
     }).join('')||'<tr><td colspan="7" class="empty">Нет записей</td></tr>';
   } else {
     const items=lossOut;
@@ -3558,7 +3683,8 @@ window.renderLoss=(tab)=>{
       const idx=items.indexOf(it);
       const isNew=!it.status||it.status==='new';
       const rowStyle=isNew?'background:var(--color-background-warning);cursor:pointer':'cursor:pointer';
-      return`<tr style="${rowStyle}" onclick="openLossWork('out',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${it.op||''}</td><td>${it.sum||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td style="font-size:11px">${it.user_comment||''}</td></tr>`;
+      const adminBtns=`<button class="btn sm" onclick="event.stopPropagation();adminEditLossItem('out',${idx})">✏</button> <button class="btn sm d" onclick="event.stopPropagation();adminDeleteLossItem('out',${idx})">🗑</button>`;
+      return`<tr style="${rowStyle}" onclick="openLossWork('out',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${it.op||''}</td><td>${it.sum||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td style="font-size:11px">${it.user_comment||''} ${adminBtns}</td></tr>`;
     }).join('')||'<tr><td colspan="8" class="empty">Нет записей</td></tr>';
   }
 };
@@ -3592,6 +3718,35 @@ window.clearLoss=async(tab)=>{
   if(!confirm('Очистить все записи?'))return;
   if(tab==='in'){lossIn=[];await saveDoc(doc(db,'loss','incoming'),{items:[]});}
   else{lossOut=[];await saveDoc(doc(db,'loss','outgoing'),{items:[]});}
+  renderLoss(tab);
+};
+window.adminEditLossItem=async(tab,idx)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const arr=tab==='in'?lossIn:lossOut;
+  const item=arr[idx];
+  if(!item){notify('Запись не найдена.', 'err');return;}
+  const nextStatus=prompt('Статус (new/found/notfound/skip)', item.status||'new');
+  if(nextStatus===null)return;
+  const nextReason=prompt('Причина', item.reason||'');
+  if(nextReason===null)return;
+  const nextComment=prompt('Комментарий', item.user_comment||item.comment||'');
+  if(nextComment===null)return;
+  item.status=String(nextStatus).trim()||'new';
+  item.reason=nextReason;
+  item.user_comment=nextComment;
+  await saveDoc(doc(db,'loss',tab==='in'?'incoming':'outgoing'),{items:arr});
+  addAuditLog(tab==='in'?'Потери входящий':'Потери исходящий','Админ: правка позиции',item.shk||'');
+  renderLoss(tab);
+};
+window.adminDeleteLossItem=async(tab,idx)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const arr=tab==='in'?lossIn:lossOut;
+  const item=arr[idx];
+  if(!item)return;
+  if(!confirm(`Удалить запись "${item.shk||'без ШК'}"?`))return;
+  arr.splice(idx,1);
+  await saveDoc(doc(db,'loss',tab==='in'?'incoming':'outgoing'),{items:arr});
+  addAuditLog(tab==='in'?'Потери входящий':'Потери исходящий','Админ: удаление позиции',item.shk||'');
   renderLoss(tab);
 };
 
@@ -3670,7 +3825,8 @@ window.renderSched=()=>{
     if(!byZ[z].length)return;
     rows+=`<tr class="sched-zone-row"><td colspan="8">${z}</td></tr>`;
     byZ[z].forEach(p=>{
-      rows+=`<tr><td class="sched-person"><div class="sched-person-name">${p.name}</div><div class="sched-person-tg">${p.tg}</div></td>`;
+      const escName=p.name.replace(/'/g,"\\'");
+      rows+=`<tr><td class="sched-person"><div class="sched-person-name">${p.name}</div><div class="sched-person-tg">${p.tg}</div><div style="margin-top:6px"><button class="btn sm" onclick="adminEditSchedPerson('${escName}')">✏</button> <button class="btn sm d" onclick="adminDeleteSchedPerson('${escName}')">🗑</button></div></td>`;
       dates.forEach(d=>{
         const ds=fd(d),sh=(shifts[p.name]||{})[ds]||'';
         const isTodayCol=ds===today;
@@ -3693,6 +3849,46 @@ window.cycleShift=async(name,date)=>{
   const cur=data.shifts[name][date]||'';
   data.shifts[name][date]=cur===''?'ДЕНЬ':cur==='ДЕНЬ'?'НОЧЬ':cur==='НОЧЬ'?'ВЫХОДНОЙ':'';
   await saveDoc(ref,data);
+};
+window.adminEditSchedPerson=async(name)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  const ref=doc(db,'schedule','data');
+  const snap=await getDoc(ref);
+  const data=snap.data()||{shifts:{},people:normalizeSchedPeople([])};
+  data.people=normalizeSchedPeople(data.people||[]);
+  const person=(data.people||[]).find(p=>p.name===name);
+  if(!person){notify('Сотрудник не найден.', 'err');return;}
+  const nextName=prompt('ФИО', person.name||'');
+  if(nextName===null)return;
+  const nextTg=prompt('Telegram', person.tg||'');
+  if(nextTg===null)return;
+  const nextZone=prompt('Зона', person.zone||'');
+  if(nextZone===null)return;
+  const newName=String(nextName).trim()||person.name;
+  person.name=newName;
+  person.tg=String(nextTg||'').trim();
+  person.zone=ZONES.includes(nextZone)?nextZone:person.zone;
+  if(newName!==name){
+    if(data.shifts?.[name]){
+      data.shifts[newName]=data.shifts[name];
+      delete data.shifts[name];
+    }
+  }
+  data.people=normalizeSchedPeople(data.people);
+  await saveDoc(ref,data);
+  addAuditLog('График','Админ: правка сотрудника',`${name} -> ${newName}`);
+};
+window.adminDeleteSchedPerson=async(name)=>{
+  if(!(await requireAdminPositionAccess()))return;
+  if(!confirm(`Удалить сотрудника "${name}"?`))return;
+  const ref=doc(db,'schedule','data');
+  const snap=await getDoc(ref);
+  const data=snap.data()||{shifts:{},people:normalizeSchedPeople([])};
+  data.people=(data.people||[]).filter(p=>p.name!==name);
+  if(data.shifts?.[name])delete data.shifts[name];
+  data.people=normalizeSchedPeople(data.people);
+  await saveDoc(ref,data);
+  addAuditLog('График','Админ: удаление сотрудника',name);
 };
 
 window.schedPrev=()=>{schedWeekOff--;renderSched();};
