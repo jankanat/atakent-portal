@@ -2357,6 +2357,14 @@ window.renderInv=(type)=>{
     const thr=getItemThreshold(type,d);
     const st=getSt(calcQ(d),thr.amber,thr.red);
     return n.toLowerCase().includes(q)&&(f==='all'||st===f);
+  }).sort((a,b)=>{
+    const qa=calcQ(data[a]||{});
+    const qb=calcQ(data[b]||{});
+    const aZero=qa<=0?1:0;
+    const bZero=qb<=0?1:0;
+    if(aZero!==bZero)return aZero-bZero; // non-zero first, zeros last
+    if(qb!==qa)return qb-qa; // larger остаток first
+    return a.localeCompare(b,'ru');
   });
   const rowsHtml=filtered.map(n=>{
     const d=data[n]||{invent:0,expense:0,arrival:0};
