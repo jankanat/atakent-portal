@@ -1466,6 +1466,7 @@ body.dark .qr-caption{color:#94a3b8}
   <div class="controls">
     <input type="text" placeholder="Поиск по S/N..." id="tsd-q" oninput="renderTSD()">
     <select id="tsd-zf" onchange="renderTSD()"><option value="all">Все зоны</option></select>
+    <select id="tsd-mf" onchange="renderTSD()"><option value="all">Все модели</option></select>
     <button class="btn p" onclick="openTSDModal()">+ Добавить / обновить</button>
     <button class="btn g" onclick="exportTSDXLSX()">↓ Excel</button>
     <button class="btn d admin-reset-btn" style="display:none" onclick="adminResetModule('tsd')">Админ: Очистить</button>
@@ -3103,6 +3104,19 @@ function syncTSDModelOptions(){
     ? options.map(m=>`<option value="${m}">${m}</option>`).join('')
     : '<option value="">Нет моделей для зоны</option>';
 }
+function syncTSDSNModelFilterOptions(){
+  const modelFilterEl=document.getElementById('tsd-mf');
+  if(!modelFilterEl)return;
+  const prev=modelFilterEl.value||'all';
+  const opts=new Set();
+  Object.keys(tsdData||{}).forEach(z=>{
+    (tsdData[z]?.devices||[]).forEach(d=>{if(String(d.model||'').trim())opts.add(String(d.model).trim());});
+    (tsdData[z]?.sns||[]).forEach(s=>{if(String(s.model||'').trim())opts.add(String(s.model).trim());});
+  });
+  const html=['<option value="all">Все модели</option>', ...[...opts].sort((a,b)=>a.localeCompare(b,'ru')).map(m=>`<option value="${m}">${m}</option>`)];
+  modelFilterEl.innerHTML=html.join('');
+  modelFilterEl.value=[...opts].includes(prev)?prev:'all';
+}
 
 function mergeDevicesByModel(devices){
   const byModel={};
@@ -3237,6 +3251,8 @@ window.renderTSD=()=>{
   if(!document.getElementById('tsd-grid'))return;
   const q=document.getElementById('tsd-q').value.toLowerCase();
   const zf=document.getElementById('tsd-zf').value;
+  syncTSDSNModelFilterOptions();
+  const mf=(document.getElementById('tsd-mf')?.value)||'all';
   let tot=0,wrk=0,bad=0,rep=0;
   Object.keys(tsdData).forEach(z=>(tsdData[z].devices||[]).forEach(d=>{tot+=d.total||0;wrk+=d.work||0;bad+=d.bad||0;rep+=d.repair||0;}));
   document.getElementById('tsd-tot').textContent=tot;
@@ -3271,7 +3287,14 @@ window.renderTSD=()=>{
     document.getElementById('tsd-grid').classList.add('hidden');
     document.getElementById('tsd-all-sn-sec').classList.add('hidden');
     const rows=[];
-    Object.keys(tsdData).forEach(z=>{(tsdData[z].sns||[]).forEach(sn=>{if((sn.sn||'').toLowerCase().includes(q))rows.push({zone:z,...sn});});});
+    Object.keys(tsdData).forEach(z=>{
+      (tsdData[z].sns||[]).forEach(sn=>{
+        const matchSN=(sn.sn||'').toLowerCase().includes(q);
+        const matchZone=(zf==='all'||z===zf);
+        const matchModel=(mf==='all'||(sn.model||'')===mf);
+        if(matchSN&&matchZone&&matchModel)rows.push({zone:z,...sn});
+      });
+    });
     document.getElementById('tsd-sn-body').innerHTML=rows.map(r=>{
       const stBadge=r.status==='work'?'<span class="bx bg">В работе</span>':r.status==='bad'?'<span class="bx br">Брак</span>':'<span class="bx ba">В ремонте</span>';
       const tLabel=deviceTypeLabel(getDeviceType(r.zone,r.model||''));
@@ -3284,7 +3307,14 @@ window.renderTSD=()=>{
   }
   // All S/N table
   const allRows=[];
-  Object.keys(tsdData).forEach(z=>(tsdData[z].sns||[]).forEach(sn=>allRows.push({zone:z,...sn})));
+  Object.keys(tsdData).forEach(z=>{
+    (tsdData[z].sns||[]).forEach(sn=>{
+      const matchZone=(zf==='all'||z===zf);
+      const matchModel=(mf==='all'||(sn.model||'')===mf);
+      const matchQ=(!q||(sn.sn||'').toLowerCase().includes(q));
+      if(matchZone&&matchModel&&matchQ)allRows.push({zone:z,...sn});
+    });
+  });
   document.getElementById('tsd-all-sn').innerHTML=allRows.slice(0,200).map(r=>{
     const stBadge=r.status==='work'?'<span class="bx bg">В работе</span>':r.status==='bad'?'<span class="bx br">Брак</span>':'<span class="bx ba">В ремонте</span>';
     const tLabel=deviceTypeLabel(getDeviceType(r.zone,r.model||''));
