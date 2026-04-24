@@ -3227,6 +3227,12 @@ function recalcZoneDevicesFromSN(zoneData){
       dev.bad=agg.bad;
       dev.repair=agg.repair;
       delete byModel[dev.model];
+    }else{
+      // Keep batteries, but prevent stale totals when no S/N remain.
+      dev.total=0;
+      dev.work=0;
+      dev.bad=0;
+      dev.repair=0;
     }
   });
   Object.keys(byModel).forEach(model=>{
