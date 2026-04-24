@@ -3254,7 +3254,9 @@ window.renderTSD=()=>{
       const escZone=z.replace(/'/g,"\\'");
       const escModel=String(d.model||'').replace(/'/g,"\\'");
       const battery=d.batteries||0;
-      const battChip=getDeviceType(z,d.model)==='tsd'
+      const devType=getDeviceType(z,d.model);
+      const hasBattery=devType==='tsd'||devType==='scanner';
+      const battChip=hasBattery
         ? `<span class="metric-total">🔋${battery}</span> <button class="btn sm" onclick="addTSDBattery('${escZone}','${escModel}')">+АКБ</button>`
         : '';
       return `<div class="drow"><div class="dname">${d.model}</div><div class="dnums"><span class="metric-total">${d.total}</span><span class="metric-work">✓${d.work}</span><span class="metric-bad">✗${d.bad}</span><span class="metric-repair">🔧${d.repair||0}</span>${battChip}</div></div>`;
