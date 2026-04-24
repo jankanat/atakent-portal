@@ -1695,6 +1695,8 @@ body.dark .qr-caption{color:#94a3b8}
     <div class="mr"><label>В работе</label><input type="number" id="tm-work" min="0" value="0"></div>
     <div class="mr"><label>Брак</label><input type="number" id="tm-bad" min="0" value="0"></div>
     <div class="mr"><label>В ремонте</label><input type="number" id="tm-rep" min="0" value="0"></div>
+    <div class="mr"><label>АКБ (добавить)</label><input type="number" id="tm-batt-add" min="0" value="0"></div>
+    <div class="mr"><label><input type="checkbox" id="tm-only-battery"> Добавить только АКБ (без изменения количества устройств)</label></div>
     <div class="mr"><label>Добавить S/N (по одному через Enter)</label><textarea id="tm-sns" placeholder="S/N устройства&#10;S/N устройства" style="height:80px"></textarea></div>
     <div class="mr"><label>Статус S/N при добавлении</label><select id="tm-sn-status"><option value="work">В работе</option><option value="bad">Брак</option><option value="repair">В ремонте</option></select></div>
     <div class="mbtns"><button class="btn" onclick="closeM('m-tsd')">Отмена</button><button class="btn p" onclick="submitTSD()">Сохранить</button></div>
@@ -3031,7 +3033,9 @@ const MODEL_CANON_BY_ZONE={
     'zebra rt40':'Zebra RT40',
     'meferi':'Meferi',
     'urovo':'Urovo U2',
-    'urovo u2':'Urovo U2'
+    'urovo u2':'Urovo U2',
+    'пк сет':'ПК Сет',
+    'термопринтер':'Термопринтер'
   },
   'Исходящий поток':{
     'zebra':'Zebra RT40',
@@ -3043,13 +3047,17 @@ const MODEL_CANON_BY_ZONE={
     'urovo u2':'Urovo U2',
     'urovo sr5600':'Urovo SR5600',
     'zebra rs5100':'Zebra RS5100',
-    'pm5':'PM5'
+    'pm5':'PM5',
+    'пк сет':'ПК Сет',
+    'термопринтер':'Термопринтер'
   },
   'Отгрузка':{
     'rt40':'Zebra RT40',
     'zebra rt40':'Zebra RT40',
     'rt40s':'Zebra RT40S',
-    'zebra rt40s':'Zebra RT40S'
+    'zebra rt40s':'Zebra RT40S',
+    'пк сет':'ПК Сет',
+    'термопринтер':'Термопринтер'
   },
   'Упаковка':{
     'mindeo':'Mindeo сканер',
@@ -3059,9 +3067,12 @@ const MODEL_CANON_BY_ZONE={
     'huawei':'Планшеты',
     'планшет huawei':'Планшеты',
     'samsung':'Планшеты',
-    'планшет samsung':'Планшеты'
+    'планшет samsung':'Планшеты',
+    'пк сет':'ПК Сет',
+    'термопринтер':'Термопринтер'
   }
 };
+const NEUTRAL_EQUIPMENT_MODELS=['ПК Сет','Термопринтер'];
 
 function canonicalModelByZone(zone,model){
   const z=normalizeZoneName(zone);
@@ -3078,6 +3089,7 @@ function getModelOptionsByZone(zone){
   const zoneData=tsdData?.[z]||{};
   (zoneData.devices||[]).forEach(d=>{if(String(d.model||'').trim())opts.add(String(d.model).trim());});
   (zoneData.sns||[]).forEach(s=>{if(String(s.model||'').trim())opts.add(String(s.model).trim());});
+  NEUTRAL_EQUIPMENT_MODELS.forEach(m=>opts.add(m));
   return [...opts].sort((a,b)=>a.localeCompare(b,'ru'));
 }
 
@@ -3096,11 +3108,12 @@ function mergeDevicesByModel(devices){
   const byModel={};
   (devices||[]).forEach(d=>{
     const model=String(d.model||'').trim()||'Без модели';
-    if(!byModel[model])byModel[model]={model,total:0,work:0,bad:0,repair:0};
+    if(!byModel[model])byModel[model]={model,total:0,work:0,bad:0,repair:0,batteries:0};
     byModel[model].total+=Number(d.total)||0;
     byModel[model].work+=Number(d.work)||0;
     byModel[model].bad+=Number(d.bad)||0;
     byModel[model].repair+=Number(d.repair)||0;
+    byModel[model].batteries+=Number(d.batteries)||0;
   });
   return Object.values(byModel);
 }
@@ -3184,7 +3197,7 @@ function recalcZoneDevicesFromSN(zoneData){
   zoneData.sns.forEach(sn=>{
     const model=canonicalModelByZone(zoneName,sn.model||'Без модели');
     sn.model=model;
-    if(!byModel[model])byModel[model]={total:0,work:0,bad:0,repair:0};
+    if(!byModel[model])byModel[model]={total:0,work:0,bad:0,repair:0,batteries:0};
     byModel[model].total++;
     if(sn.status==='bad')byModel[model].bad++;
     else if(sn.status==='repair')byModel[model].repair++;
@@ -3192,6 +3205,7 @@ function recalcZoneDevicesFromSN(zoneData){
   });
   zoneData.devices.forEach(dev=>{
     dev.model=canonicalModelByZone(zoneName,dev.model);
+    dev.batteries=Number(dev.batteries)||0;
     const agg=byModel[dev.model];
     if(agg){
       dev.total=agg.total;
@@ -3203,7 +3217,7 @@ function recalcZoneDevicesFromSN(zoneData){
   });
   Object.keys(byModel).forEach(model=>{
     const agg=byModel[model];
-    zoneData.devices.push({model,total:agg.total,work:agg.work,bad:agg.bad,repair:agg.repair});
+    zoneData.devices.push({model,total:agg.total,work:agg.work,bad:agg.bad,repair:agg.repair,batteries:0});
   });
 }
 
@@ -3236,7 +3250,15 @@ window.renderTSD=()=>{
     const tsdDevs=(zone.devices||[]).filter(d=>getDeviceType(z,d.model)==='tsd');
     const scanDevs=(zone.devices||[]).filter(d=>getDeviceType(z,d.model)==='scanner');
     const otherDevs=(zone.devices||[]).filter(d=>getDeviceType(z,d.model)==='other');
-    const row=(d)=>`<div class="drow"><div class="dname">${d.model}</div><div class="dnums"><span class="metric-total">${d.total}</span><span class="metric-work">✓${d.work}</span><span class="metric-bad">✗${d.bad}</span><span class="metric-repair">🔧${d.repair||0}</span></div></div>`;
+    const row=(d)=>{
+      const escZone=z.replace(/'/g,"\\'");
+      const escModel=String(d.model||'').replace(/'/g,"\\'");
+      const battery=d.batteries||0;
+      const battChip=getDeviceType(z,d.model)==='tsd'
+        ? `<span class="metric-total">🔋${battery}</span> <button class="btn sm" onclick="addTSDBattery('${escZone}','${escModel}')">+АКБ</button>`
+        : '';
+      return `<div class="drow"><div class="dname">${d.model}</div><div class="dnums"><span class="metric-total">${d.total}</span><span class="metric-work">✓${d.work}</span><span class="metric-bad">✗${d.bad}</span><span class="metric-repair">🔧${d.repair||0}</span>${battChip}</div></div>`;
+    };
     const section=(title,arr)=>arr.length?`<div style="margin-bottom:8px"><div style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">${title}</div>${arr.map(row).join('')}</div>`:'';
     return`<div class="zcard"><div class="ztitle">${z}<span class="zbadge">${zt} устройств</span></div>${section('ТСД',tsdDevs)}${section('Сканеры',scanDevs)}${section('Прочее',otherDevs)}<div class="zone-foot"><span class="metric-work">Работа:${zw}</span><span class="metric-bad">Брак:${zb}</span><span class="metric-repair">Ремонт:${zr}</span></div></div>`;
   }).join('');
@@ -3338,6 +3360,8 @@ window.openTSDModal=()=>{
   document.getElementById('tm-work').value='0';
   document.getElementById('tm-bad').value='0';
   document.getElementById('tm-rep').value='0';
+  document.getElementById('tm-batt-add').value='0';
+  document.getElementById('tm-only-battery').checked=false;
   document.getElementById('tm-sns').value='';
   document.getElementById('tm-sn-status').value='work';
   document.getElementById('tm-apply-manual').checked=false;
@@ -3352,6 +3376,8 @@ window.submitTSD=async()=>{
   const work=parseInt(document.getElementById('tm-work').value)||0;
   const bad=parseInt(document.getElementById('tm-bad').value)||0;
   const repair=parseInt(document.getElementById('tm-rep').value)||0;
+  const batteryAdd=Math.max(0,parseInt(document.getElementById('tm-batt-add').value)||0);
+  const onlyBattery=document.getElementById('tm-only-battery').checked;
   const snsRaw=document.getElementById('tm-sns').value.trim();
   const snStatus=document.getElementById('tm-sn-status').value;
   const applyManual=document.getElementById('tm-apply-manual').checked;
@@ -3362,8 +3388,20 @@ window.submitTSD=async()=>{
   data[zone].zoneName=zone;
   if(!data[zone].sns)data[zone].sns=[];
   const ex=data[zone].devices.find(d=>d.model===model);
+  if(onlyBattery){
+    if(!ex)data[zone].devices.push({model,total:0,work:0,bad:0,repair:0,batteries:0});
+    const item=data[zone].devices.find(d=>d.model===model);
+    item.batteries=(Number(item.batteries)||0)+batteryAdd;
+    await saveDoc(ref,data);
+    addAuditLog('ТСД / Оборудование','АКБ +',`${zone} • ${model} • +${batteryAdd}`);
+    closeM('m-tsd');
+    notify('АКБ добавлены.', 'ok');
+    return;
+  }
   if(ex && applyManual){ex.total=total;ex.work=work;ex.bad=bad;ex.repair=repair;}
-  else if(!ex){data[zone].devices.push({model,total:applyManual?total:0,work:applyManual?work:0,bad:applyManual?bad:0,repair:applyManual?repair:0});}
+  else if(!ex){data[zone].devices.push({model,total:applyManual?total:0,work:applyManual?work:0,bad:applyManual?bad:0,repair:applyManual?repair:0,batteries:0});}
+  const target=data[zone].devices.find(d=>d.model===model);
+  if(target && batteryAdd>0)target.batteries=(Number(target.batteries)||0)+batteryAdd;
   if(snsRaw){
     const newSNs=snsRaw.split('\n').map(s=>s.trim()).filter(Boolean);
     newSNs.forEach(sn=>{
@@ -3377,12 +3415,31 @@ window.submitTSD=async()=>{
   closeM('m-tsd');
   notify('Данные оборудования сохранены.', 'ok');
 };
+window.addTSDBattery=async(zone,model)=>{
+  const addVal=prompt(`Добавить АКБ для "${model}" в зоне "${zone}"`, '1');
+  if(addVal===null)return;
+  const qty=Math.max(0,parseInt(addVal)||0);
+  if(qty<=0)return;
+  const ref=doc(db,'tsd','zones');
+  const snap=await getDoc(ref);
+  const data=snap.data()||{};
+  if(!data[zone])data[zone]={devices:[],sns:[],zoneName:zone};
+  const item=(data[zone].devices||[]).find(d=>d.model===model);
+  if(!item){
+    data[zone].devices.push({model,total:0,work:0,bad:0,repair:0,batteries:qty});
+  }else{
+    item.batteries=(Number(item.batteries)||0)+qty;
+  }
+  await saveDoc(ref,data);
+  addAuditLog('ТСД / Оборудование','АКБ +',`${zone} • ${model} • +${qty}`);
+  notify('АКБ добавлены.', 'ok');
+};
 
 document.getElementById('tm-zone').addEventListener('change',syncTSDModelOptions);
 
 window.exportTSDXLSX=()=>{
-  const rows=[['Зона','Модель','Всего','В работе','Брак','В ремонте']];
-  Object.keys(tsdData).forEach(z=>(tsdData[z].devices||[]).forEach(d=>rows.push([z,d.model,d.total||0,d.work||0,d.bad||0,d.repair||0])));
+  const rows=[['Зона','Модель','Всего','В работе','Брак','В ремонте','АКБ']];
+  Object.keys(tsdData).forEach(z=>(tsdData[z].devices||[]).forEach(d=>rows.push([z,d.model,d.total||0,d.work||0,d.bad||0,d.repair||0,d.batteries||0])));
   const rows2=[['Зона','Модель','S/N','Статус']];
   Object.keys(tsdData).forEach(z=>(tsdData[z].sns||[]).forEach(s=>rows2.push([z,s.model||'',s.sn,s.status==='work'?'В работе':s.status==='bad'?'Брак':'В ремонте'])));
   const wb=XLSX.utils.book_new();
