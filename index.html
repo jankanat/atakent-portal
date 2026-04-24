@@ -1549,7 +1549,7 @@ body.dark .qr-caption{color:#94a3b8}
     </div>
     <div class="lgrid">
       <div class="cbox"><h3>По причине</h3><div class="chwrap"><canvas id="ch-lout-r"></canvas></div></div>
-      <div class="cbox"><h3>По МХ</h3><div class="chwrap"><canvas id="ch-lout-m"></canvas></div></div>
+      <div class="cbox"><h3>По причине</h3><div class="chwrap"><canvas id="ch-lout-m"></canvas></div></div>
     </div>
     <div class="uzone" id="lout-upload" style="padding:18px">
       <p style="margin-bottom:10px;font-size:13px;color:var(--color-text-secondary)">Загрузить файл "Товары без движения" (исходящий поток)</p>
@@ -1611,6 +1611,8 @@ body.dark .qr-caption{color:#94a3b8}
         <option>Брак отдел</option>
         <option>МП</option>
         <option>Сортировщик МП</option>
+        <option>Сортировщик в коробку</option>
+        <option>Предсортировщик</option>
       </select>
     </div>
     <div class="mr"><label>ID виновного</label><input type="text" id="m-lw-guilty" placeholder="ID сотрудника"></div>
@@ -1711,7 +1713,7 @@ body.dark .qr-caption{color:#94a3b8}
     <div class="mr"><label>Тара</label><input type="text" id="mli-tara"></div>
     <div class="mr"><label>Статус операции</label><select id="mli-op"><option>Переупаковка</option><option>Сортировка</option><option>Приёмка</option></select></div>
     <div class="mr"><label>Статус</label><select id="mli-st"><option>Найден</option><option>Не взяли в работу</option><option>Нет Архива</option></select></div>
-    <div class="mr"><label>Причина</label><select id="mli-r"><option>Раскладчик</option><option>Переупаковщик</option><option>Приемщик</option><option>брак отдел</option><option>МП</option></select></div>
+    <div class="mr"><label>Причина</label><select id="mli-r"><option>Раскладчик</option><option>Переупаковщик</option><option>Приемщик</option><option>брак отдел</option><option>МП</option><option>Сортировщик в коробку</option><option>Предсортировщик</option></select></div>
     <div class="mr"><label>Вид потери</label><select id="mli-t"><option value=""></option><option>Недораскладка</option><option>В мусор</option><option>Баг системы</option><option>Пустая упаковка</option></select></div>
     <div class="mr"><label>ID виновного</label><input type="text" id="mli-id"></div>
     <div class="mr"><label>Комментарий</label><textarea id="mli-c"></textarea></div>
@@ -1727,7 +1729,7 @@ body.dark .qr-caption{color:#94a3b8}
     <div class="mr"><label>Статус операции</label><select id="mlo-op"><option>Предсорт</option><option>Сортировка</option><option>Отгрузка</option></select></div>
     <div class="mr"><label>Сумма</label><input type="number" id="mlo-sum" value="0"></div>
     <div class="mr"><label>Статус</label><select id="mlo-st"><option>Найден</option><option>Не найден</option><option>Не взяли в работу</option></select></div>
-    <div class="mr"><label>Причина</label><select id="mlo-r"><option value=""></option><option>Сортировщик МП</option><option>Брак отдел</option><option>Раскладчик</option><option>Переупаковщик</option></select></div>
+    <div class="mr"><label>Причина</label><select id="mlo-r"><option value=""></option><option>Сортировщик МП</option><option>Сортировщик в коробку</option><option>Предсортировщик</option><option>Брак отдел</option><option>Раскладчик</option><option>Переупаковщик</option></select></div>
     <div class="mr"><label>ID виновного</label><input type="text" id="mlo-id"></div>
     <div class="mr"><label>Комментарий</label><textarea id="mlo-c"></textarea></div>
     <div class="mbtns"><button class="btn" onclick="closeM('m-loss-out')">Отмена</button><button class="btn p" onclick="submitLossOut()">Добавить</button></div>
@@ -3795,7 +3797,7 @@ window.renderLoss=(tab)=>{
     document.getElementById('lout-sum').textContent=Math.round(lostSum).toLocaleString('ru-RU');
     document.getElementById('lout-tag').textContent=fil.length+' записей';
     const loutRC={},loutMC={};
-    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{if(it.reason)loutRC[it.reason]=(loutRC[it.reason]||0)+1;if(it.op)loutMC[it.op]=(loutMC[it.op]||0)+1;});
+    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{if(it.reason)loutRC[it.reason]=(loutRC[it.reason]||0)+1;if(it.reason)loutMC[it.reason]=(loutMC[it.reason]||0)+1;});
     window._chLoutR=mkChart('ch-lout-r',window._chLoutR,Object.keys(loutRC),Object.values(loutRC));
     window._chLoutM=mkChart('ch-lout-m',window._chLoutM,Object.keys(loutMC),Object.values(loutMC));
     document.getElementById('lout-body').innerHTML=fil.slice(-200).map(it=>{
