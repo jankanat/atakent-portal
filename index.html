@@ -1499,9 +1499,10 @@ body.dark .qr-caption{color:#94a3b8}
       <div class="stat"><div class="stat-label">Найдено</div><div class="stat-val green" id="lin-found">—</div></div>
       <div class="stat"><div class="stat-label">Не найдено</div><div class="stat-val red" id="lin-notf">—</div></div>
     </div>
-    <div class="lgrid">
+    <div class="lgrid" style="grid-template-columns:1fr 1fr 1fr">
       <div class="cbox"><h3>По причине</h3><div class="chwrap"><canvas id="ch-lin-r"></canvas></div></div>
       <div class="cbox"><h3>По МХ</h3><div class="chwrap"><canvas id="ch-lin-m"></canvas></div></div>
+      <div class="cbox"><h3>По ID виновного</h3><div class="chwrap"><canvas id="ch-lin-g"></canvas></div></div>
     </div>
     <div class="uzone" id="lin-upload" style="padding:18px">
       <p style="margin-bottom:10px;font-size:13px;color:var(--color-text-secondary)">Загрузить файл "ШК на Местах Хранения" (входящий поток)</p>
@@ -3755,6 +3756,10 @@ function lossStatusBadge(s){
   if(s==='notfound'||s==='Не найден')return'<span class="bx br">Не найдено</span>';
   return'<span class="bx bgy">Не взяли</span>';
 }
+function normalizeGuiltyId(value){
+  const raw=String(value||'').trim();
+  return /^\d+$/.test(raw)?raw:'';
+}
 
 window.renderLoss=(tab)=>{
   if(tab==='in' && !document.getElementById('lin-body'))return;
@@ -3772,16 +3777,22 @@ window.renderLoss=(tab)=>{
     document.getElementById('lin-found').textContent=fo;
     document.getElementById('lin-notf').textContent=nf;
     document.getElementById('lin-tag').textContent=fil.length+' записей';
-    const linRC={},linMC={};
+    const linRC={},linMC={},linGC={};
     items.filter(i=>i.status&&i.status!=='new').forEach(it=>{if(it.reason)linRC[it.reason]=(linRC[it.reason]||0)+1;if(it.extra)linMC[it.extra]=(linMC[it.extra]||0)+1;});
+    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{
+      const gid=normalizeGuiltyId(it.guilty);
+      if(gid)linGC[gid]=(linGC[gid]||0)+1;
+    });
     window._chLinR=mkChart('ch-lin-r',window._chLinR,Object.keys(linRC),Object.values(linRC));
     window._chLinM=mkChart('ch-lin-m',window._chLinM,Object.keys(linMC),Object.values(linMC));
+    window._chLinG=mkChart('ch-lin-g',window._chLinG,Object.keys(linGC),Object.values(linGC));
     document.getElementById('lin-body').innerHTML=fil.slice(-200).map(it=>{
       const idx=items.indexOf(it);
       const isNew=!it.status||it.status==='new';
       const rowStyle=isNew?'background:var(--color-background-warning);cursor:pointer':'cursor:pointer';
       const adminBtns=`<button class="btn sm admin-pos-btn" onclick="event.stopPropagation();adminEditLossItem('in',${idx})">✏</button> <button class="btn sm d admin-pos-btn" onclick="event.stopPropagation();adminDeleteLossItem('in',${idx})">🗑</button>`;
-      return`<tr style="${rowStyle}" onclick="openLossWork('in',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${it.guilty||''}</td><td style="font-size:11px">${it.user_comment||it.comment||''} ${adminBtns}</td></tr>`;
+      const guiltyView=normalizeGuiltyId(it.guilty);
+      return`<tr style="${rowStyle}" onclick="openLossWork('in',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${guiltyView}</td><td style="font-size:11px">${it.user_comment||it.comment||''} ${adminBtns}</td></tr>`;
     }).join('')||'<tr><td colspan="7" class="empty">Нет записей</td></tr>';
   } else {
     const items=lossOut;
@@ -3798,8 +3809,11 @@ window.renderLoss=(tab)=>{
     document.getElementById('lout-sum').textContent=Math.round(lostSum).toLocaleString('ru-RU');
     document.getElementById('lout-tag').textContent=fil.length+' записей';
     const loutRC={},loutMC={};
-    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{if(it.reason)loutRC[it.reason]=(loutRC[it.reason]||0)+1;if(it.reason)loutMC[it.reason]=(loutMC[it.reason]||0)+1;});
-    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{if(it.guilty)loutMC[it.guilty]=(loutMC[it.guilty]||0)+1;});
+    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{if(it.reason)loutRC[it.reason]=(loutRC[it.reason]||0)+1;});
+    items.filter(i=>i.status&&i.status!=='new').forEach(it=>{
+      const gid=normalizeGuiltyId(it.guilty);
+      if(gid)loutMC[gid]=(loutMC[gid]||0)+1;
+    });
     window._chLoutR=mkChart('ch-lout-r',window._chLoutR,Object.keys(loutRC),Object.values(loutRC));
     window._chLoutM=mkChart('ch-lout-m',window._chLoutM,Object.keys(loutMC),Object.values(loutMC));
     document.getElementById('lout-body').innerHTML=fil.slice(-200).map(it=>{
@@ -3807,7 +3821,8 @@ window.renderLoss=(tab)=>{
       const isNew=!it.status||it.status==='new';
       const rowStyle=isNew?'background:var(--color-background-warning);cursor:pointer':'cursor:pointer';
       const adminBtns=`<button class="btn sm admin-pos-btn" onclick="event.stopPropagation();adminEditLossItem('out',${idx})">✏</button> <button class="btn sm d admin-pos-btn" onclick="event.stopPropagation();adminDeleteLossItem('out',${idx})">🗑</button>`;
-      return`<tr style="${rowStyle}" onclick="openLossWork('out',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${it.op||''}</td><td>${it.sum||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${it.guilty||''}</td><td style="font-size:11px">${it.user_comment||''} ${adminBtns}</td></tr>`;
+      const guiltyView=normalizeGuiltyId(it.guilty);
+      return`<tr style="${rowStyle}" onclick="openLossWork('out',${idx})"><td style="font-size:11px">${it.date||''}</td><td style="font-family:monospace;font-size:11px">${it.shk||''}</td><td>${it.extra||''}</td><td>${it.op||''}</td><td>${it.sum||''}</td><td>${lossStatusBadge(it.status)}</td><td>${it.reason||''}</td><td>${guiltyView}</td><td style="font-size:11px">${it.user_comment||''} ${adminBtns}</td></tr>`;
     }).join('')||'<tr><td colspan="9" class="empty">Нет записей</td></tr>';
   }
 };
@@ -3818,7 +3833,7 @@ window.openLossWork=(tab,idx)=>{
   document.getElementById('m-lw-info').textContent='ШК: '+r.shk+(r.extra?' • '+r.extra:'')+(r.sum?' • '+r.sum+' ₽':'');
   document.getElementById('m-lw-status').value=(r.status==='new'||!r.status)?'found':r.status;
   document.getElementById('m-lw-reason').value=r.reason||'';
-  document.getElementById('m-lw-guilty').value=r.guilty||'';
+  document.getElementById('m-lw-guilty').value=normalizeGuiltyId(r.guilty);
   document.getElementById('m-lw-comment').value=r.user_comment||'';
   document.getElementById('m-loss-work').classList.remove('hidden');
 };
@@ -3828,7 +3843,7 @@ window.saveLossWork=async()=>{
   const arr=lossEditTab==='in'?lossIn:lossOut;
   arr[lossEditIdx].status=document.getElementById('m-lw-status').value;
   arr[lossEditIdx].reason=document.getElementById('m-lw-reason').value;
-  arr[lossEditIdx].guilty=(document.getElementById('m-lw-guilty').value||'').replace(/\D/g,'');
+  arr[lossEditIdx].guilty=normalizeGuiltyId(document.getElementById('m-lw-guilty').value||'');
   arr[lossEditIdx].user_comment=document.getElementById('m-lw-comment').value;
   const ref=doc(db,'loss',lossEditTab==='in'?'incoming':'outgoing');
   await saveDoc(ref,{items:arr});
